@@ -29,7 +29,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          setError(error.message);
+          setError(typeof error === 'string' ? error : (error as any)?.message || 'Sign in failed');
           return;
         }
       } else {
@@ -39,7 +39,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         }
         const { error } = await signUp(email, password, fullName);
         if (error) {
-          setError(error.message);
+          setError(typeof error === 'string' ? error : (error as any)?.message || 'Sign up failed');
           return;
         }
         setError('Check your email for verification link!');
@@ -49,8 +49,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       // Success - close modal
       onClose();
       resetForm();
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }

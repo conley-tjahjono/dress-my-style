@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Heart, MoreHorizontal, ShoppingCart, X } from 'lucide-react';
-// @ts-ignore - Supabase client type issue in demo mode
+// @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -63,7 +63,7 @@ const Clothes = (): React.ReactElement => {
           return;
         }
 
-        // @ts-ignore - Supabase client type issue in demo mode
+        // @ts-expect-error - Supabase client type issue in demo mode
         const { data, error } = await supabase
           .from('clothes')
           .select('*')
@@ -77,14 +77,14 @@ const Clothes = (): React.ReactElement => {
         }
 
         // Transform Supabase data to match our interface
-        const transformedData: ClothingItem[] = data?.map((item: any) => ({
-          id: item.id.toString(),
-          name: item.name || 'Untitled',
-          brand: item.brand || 'Unknown Brand', 
-          image: item.image_url || '/api/placeholder/300/300',
-          color: item.color || '#gray',
-          tags: item.tags || [],
-          category: item.category?.toLowerCase() || 'other',
+        const transformedData: ClothingItem[] = data?.map((item: Record<string, unknown>) => ({
+          id: String(item.id),
+          name: String(item.name || 'Untitled'),
+          brand: String(item.brand || 'Unknown Brand'), 
+          image: String(item.image_url || '/api/placeholder/300/300'),
+          color: String(item.color || '#gray'),
+          tags: (item.tags as string[]) || [],
+          category: (item.category as string)?.toLowerCase() || 'other',
           size_type: item.size_type,
           size: item.size,
           price_min: item.price_min,

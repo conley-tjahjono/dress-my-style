@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, X, Zap, Settings, LogOut, User } from 'lucide-react';
+import { Plus, Zap, LogOut, User } from 'lucide-react';
 import NavigationTabs from './NavigationTabs';
 import AddClothesForm from './AddClothesForm';
 import AuthModal from './AuthModal';

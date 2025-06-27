@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Upload, Plus } from 'lucide-react';
-// @ts-ignore - Supabase client type issue in demo mode
+// @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -262,7 +262,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
       };
 
       // Insert into Supabase
-      // @ts-ignore - Supabase client type issue in demo mode
+      // @ts-expect-error - Supabase client type issue in demo mode
       const { data, error } = await supabase
         .from('clothes')
         .insert([clothesData])
@@ -452,7 +452,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
                       >
                         <div className="flex items-center gap-2">
                           <Plus size={14} className="text-green-600" />
-                          <span className="text-green-600">Add "{brandInput.trim()}"</span>
+                          <span className="text-green-600">Add &quot;{brandInput.trim()}&quot;</span>
                         </div>
                       </button>
                     )}
