@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Heart, MoreHorizontal, ShoppingCart, X } from 'lucide-react';
+import { Search, Heart, MoreHorizontal, ShoppingCart, X, Edit, Trash2 } from 'lucide-react';
 // @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -38,6 +38,9 @@ const Clothes = (): React.ReactElement => {
   
   // Brand search functionality
   const [brandSearchTerm, setBrandSearchTerm] = useState<string>('');
+  
+  // Dropdown menu state for each clothing item
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   
   // Applied filters (used for actual filtering and keywords)
   const [appliedTags, setAppliedTags] = useState<string[]>([]);
@@ -391,6 +394,71 @@ const Clothes = (): React.ReactElement => {
     if (category === 'all') return 'All Items';
     return category.charAt(0).toUpperCase() + category.slice(1);
   };
+
+  // Handle dropdown toggle
+  const toggleDropdown = (itemId: string) => {
+    setOpenDropdownId(openDropdownId === itemId ? null : itemId);
+  };
+
+  // Handle edit clothing item
+  const handleEditItem = (item: ClothingItem) => {
+    console.log('🖊️ Edit item:', item);
+    // Close dropdown
+    setOpenDropdownId(null);
+    // TODO: Open edit modal/form with item data
+    alert(`Edit ${item.name} - This will open an edit form`);
+  };
+
+  // Handle delete clothing item
+  const handleDeleteItem = async (item: ClothingItem) => {
+    if (!confirm(`Are you sure you want to delete "${item.name}"?`)) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting item:', item);
+      
+      // @ts-expect-error - Supabase client type issue in demo mode
+      const { error } = await supabase
+        .from('clothes')
+        .delete()
+        .eq('id', item.id)
+        .eq('user_id', user?.id);
+
+      if (error) {
+        console.error('❌ Error deleting item:', error);
+        alert('Failed to delete item. Please try again.');
+        return;
+      }
+
+      // Remove from local state
+      setClothingItems(prev => prev.filter(i => i.id !== item.id));
+      console.log('✅ Item deleted successfully');
+      
+    } catch (error) {
+      console.error('💥 Unexpected error deleting item:', error);
+      alert('An unexpected error occurred. Please try again.');
+    }
+    
+    // Close dropdown
+    setOpenDropdownId(null);
+  };
+
+  // Close dropdown when clicking outside
+  const handleClickOutside = (event: MouseEvent) => {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.dropdown-container')) {
+      setOpenDropdownId(null);
+    }
+  };
+
+  // Add click outside listener
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="flex gap-8 w-full">
@@ -890,12 +958,39 @@ const Clothes = (): React.ReactElement => {
                 {/* Image Container */}
                 <div className={`relative aspect-square ${getColorClasses(item.color)} flex items-center justify-center`}>
                   <div className="absolute top-3 right-3 flex gap-2">
-                    <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md">
+                    <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all">
                       <Heart size={16} className="text-gray-600" />
                     </button>
-                    <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md">
-                      <MoreHorizontal size={16} className="text-gray-600" />
-                    </button>
+                    
+                    {/* Dropdown Menu Container */}
+                    <div className="relative dropdown-container">
+                      <button 
+                        onClick={() => toggleDropdown(item.id)}
+                        className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all"
+                      >
+                        <MoreHorizontal size={16} className="text-gray-600" />
+                      </button>
+                      
+                      {/* Dropdown Menu */}
+                      {openDropdownId === item.id && (
+                        <div className="absolute right-0 top-10 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                          <button
+                            onClick={() => handleEditItem(item)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                          >
+                            <Edit size={14} className="text-blue-500" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteItem(item)}
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                          >
+                            <Trash2 size={14} className="text-red-500" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="text-center">
                     <ShoppingCart size={40} className="text-white mx-auto mb-2" />
