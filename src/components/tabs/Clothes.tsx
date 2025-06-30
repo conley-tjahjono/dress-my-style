@@ -33,6 +33,12 @@ const Clothes = (): React.ReactElement => {
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([0, 100]);
   
+  // Color search functionality
+  const [colorSearchTerm, setColorSearchTerm] = useState<string>('');
+  
+  // Brand search functionality
+  const [brandSearchTerm, setBrandSearchTerm] = useState<string>('');
+  
   // Applied filters (used for actual filtering and keywords)
   const [appliedTags, setAppliedTags] = useState<string[]>([]);
   const [appliedBrands, setAppliedBrands] = useState<string[]>([]);
@@ -307,8 +313,61 @@ const Clothes = (): React.ReactElement => {
     );
   };
 
+    // Color list matching AddClothesForm
+  const allColors = [
+    { name: 'Black', hex: '#000000' },
+    { name: 'White', hex: '#FFFFFF' },
+    { name: 'Gray', hex: '#6B7280' },
+    { name: 'Navy', hex: '#1E3A8A' },
+    { name: 'Blue', hex: '#3B82F6' },
+    { name: 'Red', hex: '#EF4444' },
+    { name: 'Green', hex: '#10B981' },
+    { name: 'Brown', hex: '#A16207' },
+    { name: 'Beige', hex: '#D6D3D1' },
+    { name: 'Pink', hex: '#EC4899' },
+    { name: 'Purple', hex: '#8B5CF6' },
+    { name: 'Yellow', hex: '#EAB308' },
+    { name: 'Orange', hex: '#F97316' },
+    { name: 'Khaki', hex: '#A3A380' },
+    { name: 'Burgundy', hex: '#7C2D12' },
+    { name: 'Cream', hex: '#FEF3C7' }
+  ];
+
+  // Filter colors based on search term
+  const filteredColors = useMemo(() => {
+    if (!colorSearchTerm.trim()) return allColors;
+    
+    const searchLower = colorSearchTerm.toLowerCase();
+    return allColors.filter(color => 
+      color.name.toLowerCase().includes(searchLower)
+    );
+  }, [colorSearchTerm, allColors]);
+
+  // Comprehensive brand list
+  const allBrands = [
+    'Adidas', 'Aerie', 'American Eagle', 'ASOS', 'Banana Republic',
+    'Burberry', 'Calvin Klein', 'Champion', 'Coach', 'Columbia',
+    'Converse', 'Dickies', 'Fila', 'Forever 21', 'Gap',
+    'Gucci', 'Gymshark', 'H&M', 'Hugo Boss', 'J.Crew',
+    'Kate Spade', 'Lacoste', 'Levi\'s', 'Louis Vuitton', 'Lululemon',
+    'Michael Kors', 'Nike', 'Old Navy', 'Patagonia', 'Polo Ralph Lauren',
+    'Prada', 'Puma', 'Reebok', 'Target', 'The North Face',
+    'Tommy Hilfiger', 'Under Armour', 'Uniqlo', 'Urban Outfitters', 'Vans',
+    'Versace', 'Victoria\'s Secret', 'Walmart', 'Zara', 'Other'
+  ].sort();
+
+  // Filter brands based on search term
+  const filteredBrands = useMemo(() => {
+    if (!brandSearchTerm.trim()) return allBrands;
+    
+    const searchLower = brandSearchTerm.toLowerCase();
+    return allBrands.filter(brand => 
+      brand.toLowerCase().includes(searchLower)
+    );
+  }, [brandSearchTerm, allBrands]);
+
   const toggleColor = (colorName: string) => {
-    setSelectedColors(prev => 
+    setSelectedColors(prev =>
       prev.includes(colorName) ? prev.filter(c => c !== colorName) : [...prev, colorName]
     );
   };
@@ -549,61 +608,135 @@ const Clothes = (): React.ReactElement => {
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { name: 'Black', hex: '#000000' },
-              { name: 'White', hex: '#FFFFFF' },
-              { name: 'Gray', hex: '#6B7280' },
-              { name: 'Navy', hex: '#1E3A8A' },
-              { name: 'Blue', hex: '#3B82F6' },
-              { name: 'Red', hex: '#EF4444' },
-              { name: 'Green', hex: '#10B981' },
-              { name: 'Brown', hex: '#A16207' },
-              { name: 'Beige', hex: '#D6D3D1' },
-              { name: 'Pink', hex: '#EC4899' },
-              { name: 'Purple', hex: '#8B5CF6' },
-              { name: 'Yellow', hex: '#EAB308' },
-              { name: 'Orange', hex: '#F97316' },
-              { name: 'Khaki', hex: '#A3A380' },
-              { name: 'Burgundy', hex: '#7C2D12' },
-              { name: 'Cream', hex: '#FEF3C7' }
-            ].map((colorOption) => (
+          {/* Color Search */}
+          <div className="relative mb-3">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
+            <input
+              type="text"
+              placeholder="Search colors..."
+              value={colorSearchTerm}
+              onChange={(e) => setColorSearchTerm(e.target.value)}
+              className="w-full pl-7 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            {colorSearchTerm && (
               <button
-                key={colorOption.name}
-                onClick={() => toggleColor(colorOption.name)}
-                className={`flex items-center gap-2 p-2 rounded-lg border transition-all min-h-[3rem] ${
-                  selectedColors.includes(colorOption.name)
-                    ? 'border-green-500 bg-green-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
+                onClick={() => setColorSearchTerm('')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                <div
-                  className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
-                    colorOption.name === 'White' ? 'border-gray-400' : 'border-gray-300'
-                  }`}
-                  style={{ backgroundColor: colorOption.hex }}
-                />
-                <span className="text-xs text-gray-700 font-medium truncate">{colorOption.name}</span>
+                <X size={14} />
               </button>
-            ))}
+            )}
+          </div>
+
+          {/* Scrollable Color Grid */}
+          <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg">
+            <div className="grid grid-cols-2 gap-1 p-2">
+              {filteredColors.map((colorOption) => (
+                <button
+                  key={colorOption.name}
+                  onClick={() => toggleColor(colorOption.name)}
+                  className={`flex items-center gap-2 p-2 rounded-md border transition-all min-h-[2.5rem] ${
+                    selectedColors.includes(colorOption.name)
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div
+                    className={`w-3 h-3 rounded-full border flex-shrink-0 ${
+                      colorOption.name === 'White' ? 'border-gray-400' : 'border-gray-300'
+                    }`}
+                    style={{ backgroundColor: colorOption.hex }}
+                  />
+                  <span className="text-xs text-gray-700 font-medium truncate text-left">{colorOption.name}</span>
+                </button>
+              ))}
+            </div>
+            
+            {/* No Results Message */}
+            {filteredColors.length === 0 && (
+              <div className="text-center py-4 text-sm text-gray-500">
+                No colors found for "{colorSearchTerm}"
+              </div>
+            )}
           </div>
         </div>
 
         {/* Brand Section */}
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">Brand</h3>
-          <div className="space-y-2">
-            {['H&M', 'Gymshark', 'Nike'].map((brand) => (
-              <label key={brand} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={selectedBrands.includes(brand)}
-                  onChange={() => toggleBrand(brand)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">{brand}</span>
-              </label>
-            ))}
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-900">Brand</h3>
+            {selectedBrands.length > 0 && (
+              <button
+                onClick={() => setSelectedBrands([])}
+                className="text-xs text-red-500 hover:text-red-700 transition-colors"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+          
+          {/* Selected Brands Display */}
+          {selectedBrands.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {selectedBrands.map((brand) => (
+                <span
+                  key={brand}
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs"
+                >
+                  {brand}
+                  <button
+                    onClick={() => toggleBrand(brand)}
+                    className="w-3 h-3 flex items-center justify-center rounded-full hover:bg-green-200"
+                  >
+                    <X size={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Brand Search */}
+          <div className="relative mb-3">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
+            <input
+              type="text"
+              placeholder="Search brands..."
+              value={brandSearchTerm}
+              onChange={(e) => setBrandSearchTerm(e.target.value)}
+              className="w-full pl-7 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            {brandSearchTerm && (
+              <button
+                onClick={() => setBrandSearchTerm('')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Scrollable Brand List */}
+          <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg">
+            <div className="p-2 space-y-1">
+              {filteredBrands.map((brand) => (
+                <label key={brand} className="flex items-center p-2 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={selectedBrands.includes(brand)}
+                    onChange={() => toggleBrand(brand)}
+                    className="w-3 h-3 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-1"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 flex-1">{brand}</span>
+                </label>
+              ))}
+            </div>
+            
+            {/* No Results Message */}
+            {filteredBrands.length === 0 && (
+              <div className="text-center py-4 text-sm text-gray-500">
+                No brands found for "{brandSearchTerm}"
+              </div>
+            )}
           </div>
         </div>
 

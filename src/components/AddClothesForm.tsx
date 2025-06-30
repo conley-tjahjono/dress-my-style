@@ -61,14 +61,16 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
   ];
 
   const baseBrands = [
-    'Nike',
-    'Adidas', 
-    'H&M',
-    'Zara',
-    'Uniqlo',
-    'Gymshark',
-    'Lululemon'
-  ];
+    'Adidas', 'Aerie', 'American Eagle', 'ASOS', 'Banana Republic',
+    'Burberry', 'Calvin Klein', 'Champion', 'Coach', 'Columbia',
+    'Converse', 'Dickies', 'Fila', 'Forever 21', 'Gap',
+    'Gucci', 'Gymshark', 'H&M', 'Hugo Boss', 'J.Crew',
+    'Kate Spade', 'Lacoste', 'Levi\'s', 'Louis Vuitton', 'Lululemon',
+    'Michael Kors', 'Nike', 'Old Navy', 'Patagonia', 'Polo Ralph Lauren',
+    'Prada', 'Puma', 'Reebok', 'Target', 'The North Face',
+    'Tommy Hilfiger', 'Under Armour', 'Uniqlo', 'Urban Outfitters', 'Vans',
+    'Versace', 'Victoria\'s Secret', 'Walmart', 'Zara', 'Other'
+  ].sort();
 
   // Organized tag categories
   const seasonalTags = [
