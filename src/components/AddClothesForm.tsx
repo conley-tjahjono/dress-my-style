@@ -575,14 +575,25 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
           alert('Clothes updated successfully! 🎉');
           // Call onEditSuccess with updated item if editing
           if (onEditSuccess && data && data[0]) {
-            const updatedItem = {
-              ...editingItem,
-              ...data[0],
-              // Transform colors back to array if needed
-              color: data[0].color || editingItem.color,
-              tags: data[0].tags || editingItem.tags || []
+            // Transform Supabase data to match ClothingItem interface (same as in Clothes.tsx)
+            const updatedItem: ClothingItem = {
+              id: String(data[0].id),
+              name: String(data[0].name || 'Untitled'),
+              brand: String(data[0].brand || 'Unknown Brand'), 
+              image: String(data[0].image_url || '/api/placeholder/300/300'),
+              color: String(data[0].color || '#gray'),
+              tags: (data[0].tags as string[]) || [],
+              category: (data[0].category as string)?.toLowerCase() || 'other',
+              size_type: data[0].size_type,
+              size: data[0].size,
+              price_min: data[0].price_min,
+              price_max: data[0].price_max,
+              image_url: data[0].image_url,
+              created_at: data[0].created_at,
+              updated_at: data[0].updated_at
             };
-            onEditSuccess(updatedItem as ClothingItem);
+            console.log('🔄 Calling onEditSuccess with updated item:', updatedItem);
+            onEditSuccess(updatedItem);
           }
         } else {
           alert('Clothes added successfully! 🎉');

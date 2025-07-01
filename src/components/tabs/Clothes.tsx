@@ -484,12 +484,21 @@ const Clothes = (): React.ReactElement => {
 
   // Handle successful edit update
   const handleEditSuccess = (updatedItem: ClothingItem) => {
+    console.log('🔄 Handling edit success for item:', updatedItem.id);
+    console.log('📝 Updated item data:', updatedItem);
+    
     // Update the item in the local state
-    setClothingItems(prev => prev.map(item => 
-      item.id === updatedItem.id ? updatedItem : item
-    ));
+    setClothingItems(prev => {
+      const updated = prev.map(item => 
+        item.id === updatedItem.id ? updatedItem : item
+      );
+      console.log('✅ Clothing items updated in state');
+      return updated;
+    });
+    
     // Close the edit form
     handleCloseEditForm();
+    console.log('🎉 Edit success handling complete');
   };
 
   // Handle delete clothing item
