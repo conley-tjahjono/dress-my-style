@@ -69,6 +69,13 @@ const Clothes = (): React.ReactElement => {
     const fetchClothingItems = async () => {
       try {
         console.log('🔄 Loading clothes from Supabase...');
+        console.log('👤 Auth state - Loading:', authLoading, 'User:', user?.email || 'null');
+        
+        // Don't fetch if auth is still loading
+        if (authLoading) {
+          console.log('⏳ Auth still loading, waiting...');
+          return;
+        }
         
         if (!user) {
           console.log('🔐 User not authenticated, skipping data load');
@@ -118,7 +125,7 @@ const Clothes = (): React.ReactElement => {
     };
 
     fetchClothingItems();
-  }, [user]); // Reload when user changes
+  }, [user, authLoading]); // Reload when user changes or auth loading state changes
 
   // Get unique categories from clothing items
   const categories = useMemo(() => {
