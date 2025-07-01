@@ -161,16 +161,51 @@ const Clothes = (): React.ReactElement => {
         if (!appliedBrands.includes(item.brand)) return false;
       }
 
-      // Color filter
+      // Color filter - handle both comma-separated and single colors
       if (appliedColors.length > 0) {
-        if (!appliedColors.includes(item.color)) return false;
+        const itemColorString = String(item.color || '');
+        const itemColors = itemColorString
+          .split(',')
+          .map(c => c.trim().toLowerCase())
+          .filter(Boolean);
+        
+        const hasMatchingColor = appliedColors.some(filterColor => 
+          itemColors.includes(filterColor.toLowerCase())
+        );
+        if (!hasMatchingColor) return false;
+      }
+
+      // Size filters - check different size types based on category
+      if (appliedSizes.length > 0) {
+        const garmentCategories = ['shirts', 'pants', 'dresses', 'jackets', 'sweaters'];
+        if (garmentCategories.includes(item.category.toLowerCase())) {
+          if (!appliedSizes.includes(item.size || '')) return false;
+        }
+      }
+
+      if (appliedAccessorySizes.length > 0) {
+        if (item.category.toLowerCase() === 'accessories') {
+          if (!appliedAccessorySizes.includes(item.size || '')) return false;
+        }
+      }
+
+      if (appliedShoeSizes.length > 0) {
+        if (item.category.toLowerCase() === 'shoes') {
+          if (!appliedShoeSizes.includes(item.size || '')) return false;
+        }
+      }
+
+      // Price filter
+      if (appliedPriceRange[1] < 100) {
+        const itemPrice = item.price_min || 0;
+        if (itemPrice > appliedPriceRange[1]) return false;
       }
 
       return true;
     });
 
     return items;
-  }, [searchTerm, selectedCategory, appliedTags, appliedBrands, appliedColors, clothingItems]);
+  }, [searchTerm, selectedCategory, appliedTags, appliedBrands, appliedColors, appliedSizes, appliedAccessorySizes, appliedShoeSizes, appliedPriceRange, clothingItems]);
 
   // Get category counts based on search term but not category filter
   const categoryCounts = useMemo(() => {

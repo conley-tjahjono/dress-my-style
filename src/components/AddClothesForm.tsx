@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Upload, Plus, Image as ImageIcon, Link } from 'lucide-react';
 // @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '../lib/supabase';
@@ -60,6 +60,9 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
 
+  // User's existing brands state
+  const [userBrands, setUserBrands] = useState<string[]>([]);
+
   // Populate form when editing an item
   useEffect(() => {
     if (editingItem) {
@@ -109,6 +112,35 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     }
   }, [editingItem]);
 
+  // Fetch user's existing brands
+  useEffect(() => {
+    const fetchUserBrands = async () => {
+      if (!user) return;
+      
+      try {
+        console.log('🏷️ Fetching user brands...');
+        // @ts-expect-error - Supabase client type issue in demo mode
+        const { data, error } = await supabase
+          .from('clothes')
+          .select('brand')
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('❌ Error fetching user brands:', error);
+          return;
+        }
+
+        const uniqueUserBrands = [...new Set(data?.map((item: { brand: string }) => item.brand).filter(Boolean))] as string[];
+        setUserBrands(uniqueUserBrands);
+        console.log('✅ Loaded user brands:', uniqueUserBrands);
+      } catch (error) {
+        console.error('💥 Unexpected error fetching user brands:', error);
+      }
+    };
+
+    fetchUserBrands();
+  }, [user]);
+
   // Common clothing colors with names and hex values
   const colorOptions = [
     { name: 'Black', hex: '#000000' },
@@ -150,7 +182,13 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     'Prada', 'Puma', 'Reebok', 'Target', 'The North Face',
     'Tommy Hilfiger', 'Under Armour', 'Uniqlo', 'Urban Outfitters', 'Vans',
     'Versace', 'Victoria\'s Secret', 'Walmart', 'Zara', 'Other'
-  ].sort();
+  ];
+
+  // Combine hardcoded brands with user's existing brands
+  const allBrands = useMemo(() => {
+    const combined = [...baseBrands, ...userBrands];
+    return [...new Set(combined)].sort(); // Remove duplicates and sort
+  }, [userBrands]);
 
   // Organized tag categories
   const seasonalTags = [
@@ -174,7 +212,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
   ];
   
   // Filter brands based on input
-  const filteredBrands = baseBrands.filter(brand => 
+  const filteredBrands = allBrands.filter(brand => 
     brand.toLowerCase().includes(brandInput.toLowerCase())
   );
 
@@ -240,7 +278,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
   };
 
   const handleAddNewBrand = () => {
-    if (brandInput.trim() && !baseBrands.includes(brandInput.trim())) {
+    if (brandInput.trim() && !allBrands.includes(brandInput.trim())) {
       setFormData(prev => ({ ...prev, brand: brandInput.trim() }));
       setShowBrandDropdown(false);
     }
@@ -797,7 +835,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                     ))}
                     
                     {/* Add new brand option */}
-                    {brandInput.trim() && !baseBrands.some(brand => brand.toLowerCase() === brandInput.toLowerCase()) && (
+                    {brandInput.trim() && !allBrands.some(brand => brand.toLowerCase() === brandInput.toLowerCase()) && (
                       <button
                         type="button"
                         onClick={handleAddNewBrand}
@@ -811,7 +849,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                     )}
                     
                     {/* No results message */}
-                    {filteredBrands.length === 0 && brandInput.trim() && baseBrands.some(brand => brand.toLowerCase() === brandInput.toLowerCase()) && (
+                    {filteredBrands.length === 0 && brandInput.trim() && !allBrands.some(brand => brand.toLowerCase() === brandInput.toLowerCase()) && (
                       <div className="px-3 py-2 text-gray-500 text-sm">
                         No matching brands found
                       </div>
