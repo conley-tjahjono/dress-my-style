@@ -83,16 +83,30 @@ const Clothes = (): React.ReactElement => {
           setIsLoading(false);
           return;
         }
+        
+        console.log('👤 User authenticated, fetching clothing data for:', user.email);
+
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database query timed out')), 10000)
+        );
 
         // @ts-expect-error - Supabase client type issue in demo mode
-        const { data, error } = await supabase
+        const queryPromise = supabase
           .from('clothes')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
+        console.log('📡 Executing Supabase query...');
+        const result = await Promise.race([queryPromise, timeoutPromise]);
+        console.log('📨 Query result received:', result);
+        
+        const { data, error } = result;
+
         if (error) {
           console.error('❌ Error loading clothes:', error);
+          console.error('❌ Error details:', { code: error.code, message: error.message });
           setIsLoading(false);
           return;
         }
