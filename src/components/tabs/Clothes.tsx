@@ -5,6 +5,20 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import AddClothesForm from '../AddClothesForm';
 
+// Debug function to test Supabase connection
+const testSupabaseConnection = async (userId: string) => {
+  try {
+    console.log('🧪 Testing Supabase connection...');
+    // @ts-expect-error - Supabase client type issue in demo mode
+    const result = await supabase.from('clothes').select('count').eq('user_id', userId);
+    console.log('🧪 Connection test result:', result);
+    return result;
+  } catch (error) {
+    console.error('🧪 Connection test failed:', error);
+    return { error };
+  }
+};
+
 interface ClothingItem {
   id: string;
   name: string;
@@ -63,13 +77,15 @@ const Clothes = (): React.ReactElement => {
   // Real clothing data from Supabase
   const [clothingItems, setClothingItems] = useState<ClothingItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Load clothing data from Supabase
   useEffect(() => {
+    let isCancelled = false;
+    
     const fetchClothingItems = async () => {
       try {
-        console.log('🔄 Loading clothes from Supabase...');
-        console.log('👤 Auth state - Loading:', authLoading, 'User:', user?.email || 'null');
+        console.log('🔄 Starting clothes fetch - Auth loading:', authLoading, 'User:', user?.email || 'null', 'Cancelled:', isCancelled);
         
         // Don't fetch if auth is still loading
         if (authLoading) {
@@ -79,12 +95,18 @@ const Clothes = (): React.ReactElement => {
         
         if (!user) {
           console.log('🔐 User not authenticated, skipping data load');
-          setClothingItems([]);
-          setIsLoading(false);
+          if (!isCancelled) {
+            setClothingItems([]);
+            setIsLoading(false);
+          }
           return;
         }
         
         console.log('👤 User authenticated, fetching clothing data for:', user.email);
+
+        // Test connection first
+        const connectionTest = await testSupabaseConnection(user.id);
+        console.log('🔌 Connection test completed:', connectionTest);
 
         // Add timeout to prevent hanging
         const timeoutPromise = new Promise((_, reject) => 
@@ -98,16 +120,23 @@ const Clothes = (): React.ReactElement => {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        console.log('📡 Executing Supabase query...');
+        console.log('📡 Executing Supabase query for user:', user.id);
         const result = await Promise.race([queryPromise, timeoutPromise]);
         console.log('📨 Query result received:', result);
+        
+        if (isCancelled) {
+          console.log('🚫 Request was cancelled, ignoring result');
+          return;
+        }
         
         const { data, error } = result;
 
         if (error) {
           console.error('❌ Error loading clothes:', error);
-          console.error('❌ Error details:', { code: error.code, message: error.message });
-          setIsLoading(false);
+          console.error('❌ Error details:', { code: error.code, message: error.message, hint: error.hint });
+          if (!isCancelled) {
+            setIsLoading(false);
+          }
           return;
         }
 
@@ -129,17 +158,54 @@ const Clothes = (): React.ReactElement => {
           updated_at: item.updated_at
         })) || [];
 
-        setClothingItems(transformedData);
-        console.log('✅ Loaded', transformedData.length, 'clothing items');
+        if (!isCancelled) {
+          setClothingItems(transformedData);
+          console.log('✅ Loaded', transformedData.length, 'clothing items');
+        }
       } catch (error) {
         console.error('💥 Unexpected error loading clothes:', error);
+        if (error instanceof Error) {
+          console.error('💥 Error message:', error.message);
+          console.error('💥 Error stack:', error.stack);
+        }
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) {
+          setIsLoading(false);
+          console.log('🏁 Clothes loading complete');
+        }
       }
     };
 
     fetchClothingItems();
-  }, [user, authLoading]); // Reload when user changes or auth loading state changes
+    
+    return () => {
+      isCancelled = true;
+      console.log('🧹 Cleaning up clothes fetch');
+    };
+  }, [user?.id, authLoading]); // Only depend on user ID and auth loading state
+
+  // Emergency timeout to prevent infinite loading
+  useEffect(() => {
+    if (authLoading || isLoading) {
+      console.log('⏰ Setting emergency timeout for loading state');
+      const timeout = setTimeout(() => {
+        console.log('🚨 Emergency timeout: Force stopping loading state');
+        setIsLoading(false);
+      }, 15000); // 15 second emergency timeout
+      
+      setLoadingTimeout(timeout);
+      
+      return () => {
+        clearTimeout(timeout);
+        setLoadingTimeout(null);
+      };
+    } else {
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+        setLoadingTimeout(null);
+      }
+    }
+  }, [authLoading, isLoading, loadingTimeout]);
 
   // Get unique categories from clothing items
   const categories = useMemo(() => {
@@ -1097,6 +1163,17 @@ const Clothes = (): React.ReactElement => {
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
               <p className="text-gray-500">Loading your closet...</p>
+              <p className="text-xs text-gray-400 mt-2">Auth: {authLoading ? 'loading' : 'ready'}, Data: {isLoading ? 'loading' : 'ready'}</p>
+              <button
+                onClick={() => {
+                  console.log('🔄 Manual refresh triggered');
+                  setIsLoading(false);
+                  window.location.reload();
+                }}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Force Refresh
+              </button>
             </div>
           </div>
         ) : !user ? (

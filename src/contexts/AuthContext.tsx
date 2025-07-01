@@ -38,12 +38,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    
     // Get initial session
     const getSession = async () => {
       try {
         console.log('🔄 Getting initial session...');
         const { data: { session } } = await typedSupabase.auth.getSession();
         console.log('📋 Session data:', session ? 'Session exists' : 'No session');
+        
+        if (!mounted) return;
         
         if (session?.user) {
           console.log('👤 User found in session:', session.user.email);
@@ -75,21 +79,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            full_name: profile?.full_name || session.user.user_metadata?.full_name || 'User',
-            avatar_url: profile?.avatar_url
-          });
-          console.log('✅ User set in context');
+          if (mounted) {
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              full_name: profile?.full_name || session.user.user_metadata?.full_name || 'User',
+              avatar_url: profile?.avatar_url
+            });
+            console.log('✅ User set in context');
+          }
         } else {
           console.log('🚫 No user in session');
+          if (mounted) {
+            setUser(null);
+          }
         }
       } catch (error) {
         console.error('❌ Error getting session:', error);
+        if (mounted) {
+          setUser(null);
+        }
       } finally {
-        setLoading(false);
-        console.log('🏁 Initial session loading complete');
+        if (mounted) {
+          setLoading(false);
+          console.log('🏁 Initial session loading complete');
+        }
       }
     };
 
@@ -98,7 +112,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = typedSupabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
-        console.log('🔐 Auth state changed:', event);
+        console.log('🔐 Auth state changed:', event, 'mounted:', mounted);
+        
+        if (!mounted) return;
         
         if (session?.user) {
           console.log('👤 User in auth change:', session.user.email);
@@ -130,22 +146,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            full_name: profile?.full_name || session.user.user_metadata?.full_name || 'User',
-            avatar_url: profile?.avatar_url
-          });
-          console.log('✅ User updated in auth change');
+          if (mounted) {
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              full_name: profile?.full_name || session.user.user_metadata?.full_name || 'User',
+              avatar_url: profile?.avatar_url
+            });
+            console.log('✅ User updated in auth change');
+          }
         } else {
           console.log('🚫 No user in auth change, setting to null');
-          setUser(null);
+          if (mounted) {
+            setUser(null);
+          }
         }
-        setLoading(false);
+        
+        // Only set loading to false after we've handled the auth change
+        if (mounted) {
+          setLoading(false);
+          console.log('🏁 Auth change loading complete');
+        }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
