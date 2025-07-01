@@ -1006,7 +1006,7 @@ const Clothes = (): React.ReactElement => {
             className="w-full text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-50 py-2 px-3 rounded-lg border border-gray-200 transition-colors"
           >
             🧹 Clear All
-          </button>
+        </button>
         </div>
       </div>
       

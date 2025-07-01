@@ -28,19 +28,19 @@ const Header = () => {
             ) : user ? (
               <>
                 {/* Add Clothes Button */}
-                <button
+            <button
                   onClick={() => setShowAddClothesForm(true)}
-                  className="flex items-center gap-2 h-10 px-5 rounded-lg border border-[var(--bg-positive-hover)] bg-[var(--bg-positive-default)] hover:bg-[var(--bg-positive-hover)] transition-colors min-w-[142px]"
-                >
-                  <Plus size={16} strokeWidth={1.6} className="text-[var(--bg-positive-tertiary)]" />
+              className="flex items-center gap-2 h-10 px-5 rounded-lg border border-[var(--bg-positive-hover)] bg-[var(--bg-positive-default)] hover:bg-[var(--bg-positive-hover)] transition-colors min-w-[142px]"
+            >
+              <Plus size={16} strokeWidth={1.6} className="text-[var(--bg-positive-tertiary)]" />
                   <span className="text-[var(--bg-positive-tertiary)] font-medium">Add Clothes</span>
-                </button>
+            </button>
                 
                 {/* AI Assistant Button */}
-                <button
-                  className="flex items-center gap-2 h-10 px-5 rounded-lg border border-[var(--bg-positive-hover)] bg-[var(--bg-positive-secondary)] hover:bg-[var(--bg-positive-default)] transition-colors min-w-[138px]"
-                >
-                  <Zap size={16} strokeWidth={1.6} className="text-[var(--bg-positive-hover)]" />
+            <button
+              className="flex items-center gap-2 h-10 px-5 rounded-lg border border-[var(--bg-positive-hover)] bg-[var(--bg-positive-secondary)] hover:bg-[var(--bg-positive-default)] transition-colors min-w-[138px]"
+            >
+              <Zap size={16} strokeWidth={1.6} className="text-[var(--bg-positive-hover)]" />
                   <span className="text-[var(--bg-positive-hover)] font-medium">AI Assistant</span>
                 </button>
 
@@ -56,7 +56,7 @@ const Header = () => {
                     title="Sign Out"
                   >
                     <LogOut size={18} strokeWidth={2} className="text-gray-600" />
-                  </button>
+            </button>
                 </div>
               </>
             ) : (
@@ -67,7 +67,7 @@ const Header = () => {
               >
                 <User size={16} strokeWidth={1.6} className="text-[var(--bg-positive-tertiary)]" />
                 <span className="text-[var(--bg-positive-tertiary)] font-medium">Sign In</span>
-              </button>
+            </button>
             )}
           </div>
         </div>

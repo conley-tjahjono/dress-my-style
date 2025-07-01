@@ -41,11 +41,11 @@ const NavigationTabs = (): React.ReactElement => {
       <div className="w-full h-16 bg-gray-100 rounded-lg mb-8">
         <div className="flex items-center h-full px-4">
           {tabs.map(({ id, label, icon: Icon }) => (
-            <button 
+          <button 
               key={id}
               onClick={() => setActiveTab(id)}
               className={getTabClasses(id)}
-            >
+          >
               <Icon 
                 size={24} 
                 strokeWidth={2.5} 
@@ -54,7 +54,7 @@ const NavigationTabs = (): React.ReactElement => {
               <span className={`text-sm font-medium ${getTextIconClasses(id)}`}>
                 {label}
               </span>
-            </button>
+          </button>
           ))}
         </div>
       </div>

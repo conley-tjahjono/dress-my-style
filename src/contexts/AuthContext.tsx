@@ -41,26 +41,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Get initial session
     const getSession = async () => {
       try {
+        console.log('🔄 Getting initial session...');
         const { data: { session } } = await typedSupabase.auth.getSession();
+        console.log('📋 Session data:', session ? 'Session exists' : 'No session');
+        
         if (session?.user) {
+          console.log('👤 User found in session:', session.user.email);
+          
           // Get user profile from our custom users table
-          const { data: profile } = await typedSupabase
+          const { data: profile, error: profileError } = await typedSupabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
+          console.log('📝 Profile fetch result:', { profile, profileError });
+
+          // If profile doesn't exist, create it
+          if (profileError && profileError.code === 'PGRST116') {
+            console.log('🆕 Creating missing user profile...');
+            const { error: insertError } = await typedSupabase
+              .from('users')
+              .insert([{
+                id: session.user.id,
+                email: session.user.email,
+                full_name: session.user.user_metadata?.full_name || 'User'
+              }]);
+
+            if (insertError) {
+              console.error('❌ Failed to create user profile:', insertError);
+            } else {
+              console.log('✅ User profile created successfully');
+            }
+          }
+
           setUser({
             id: session.user.id,
             email: session.user.email || '',
-            full_name: profile?.full_name,
+            full_name: profile?.full_name || session.user.user_metadata?.full_name || 'User',
             avatar_url: profile?.avatar_url
           });
+          console.log('✅ User set in context');
+        } else {
+          console.log('🚫 No user in session');
         }
       } catch (error) {
-        console.error('Error getting session:', error);
+        console.error('❌ Error getting session:', error);
       } finally {
         setLoading(false);
+        console.log('🏁 Initial session loading complete');
       }
     };
 
@@ -72,20 +101,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('🔐 Auth state changed:', event);
         
         if (session?.user) {
+          console.log('👤 User in auth change:', session.user.email);
+          
           // Get user profile from our custom users table
-          const { data: profile } = await typedSupabase
+          const { data: profile, error: profileError } = await typedSupabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
+          console.log('📝 Profile in auth change:', { profile, profileError });
+
+          // If profile doesn't exist, create it
+          if (profileError && profileError.code === 'PGRST116') {
+            console.log('🆕 Creating user profile in auth change...');
+            const { error: insertError } = await typedSupabase
+              .from('users')
+              .insert([{
+                id: session.user.id,
+                email: session.user.email,
+                full_name: session.user.user_metadata?.full_name || 'User'
+              }]);
+
+            if (insertError) {
+              console.error('❌ Failed to create user profile in auth change:', insertError);
+            } else {
+              console.log('✅ User profile created in auth change');
+            }
+          }
+
           setUser({
             id: session.user.id,
             email: session.user.email || '',
-            full_name: profile?.full_name,
+            full_name: profile?.full_name || session.user.user_metadata?.full_name || 'User',
             avatar_url: profile?.avatar_url
           });
+          console.log('✅ User updated in auth change');
         } else {
+          console.log('🚫 No user in auth change, setting to null');
           setUser(null);
         }
         setLoading(false);
@@ -97,7 +150,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const { error } = await typedSupabase.auth.signUp({
+      console.log('📝 Starting signup process...');
+      const { data, error } = await typedSupabase.auth.signUp({
         email,
         password,
         options: {
@@ -109,9 +163,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
 
+      console.log('✅ Supabase auth signup successful');
+      
+      // Note: User profile will be created automatically when the auth state changes
+      // or when the user confirms their email (if email confirmation is enabled)
+
       return { error: null };
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('❌ Signup error:', error);
       return { error };
     }
   };
