@@ -3,6 +3,7 @@ import { Search, Heart, MoreHorizontal, ShoppingCart, X, Edit, Trash2 } from 'lu
 // @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import AddClothesForm from '../AddClothesForm';
 
 interface ClothingItem {
   id: string;
@@ -41,6 +42,10 @@ const Clothes = (): React.ReactElement => {
   
   // Dropdown menu state for each clothing item
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  
+  // Edit mode state
+  const [editingItem, setEditingItem] = useState<ClothingItem | null>(null);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   
   // Applied filters (used for actual filtering and keywords)
   const [appliedTags, setAppliedTags] = useState<string[]>([]);
@@ -405,8 +410,25 @@ const Clothes = (): React.ReactElement => {
     console.log('🖊️ Edit item:', item);
     // Close dropdown
     setOpenDropdownId(null);
-    // TODO: Open edit modal/form with item data
-    alert(`Edit ${item.name} - This will open an edit form`);
+    // Set editing item and open edit form
+    setEditingItem(item);
+    setIsEditFormOpen(true);
+  };
+
+  // Handle closing edit form
+  const handleCloseEditForm = () => {
+    setIsEditFormOpen(false);
+    setEditingItem(null);
+  };
+
+  // Handle successful edit update
+  const handleEditSuccess = (updatedItem: ClothingItem) => {
+    // Update the item in the local state
+    setClothingItems(prev => prev.map(item => 
+      item.id === updatedItem.id ? updatedItem : item
+    ));
+    // Close the edit form
+    handleCloseEditForm();
   };
 
   // Handle delete clothing item
@@ -956,9 +978,42 @@ const Clothes = (): React.ReactElement => {
             filteredItems.map((item) => (
               <div key={item.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 {/* Image Container */}
-                <div className={`relative aspect-square ${getColorClasses(item.color)} flex items-center justify-center`}>
+                <div className="relative aspect-square overflow-hidden bg-gray-100">
+                  {/* Image or Fallback */}
+                  {(item.image_url || item.image) ? (
+                    <img
+                      src={item.image_url || item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to colored background if image fails to load
+                        console.log('🖼️ Image failed to load for:', item.name);
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const fallback = target.nextElementSibling as HTMLElement;
+                        if (fallback) {
+                          fallback.style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  
+                  {/* Fallback content when no image or image fails */}
+                  <div 
+                    className={`absolute inset-0 ${getColorClasses(item.color)} flex items-center justify-center transition-all ${(item.image_url || item.image) ? 'hidden' : 'flex'}`}
+                    style={{ display: (item.image_url || item.image) ? 'none' : 'flex' }}
+                  >
+                    <div className="text-center">
+                      <ShoppingCart size={40} className="text-white mx-auto mb-2" />
+                      <div className="text-white text-sm font-medium px-2 text-center">
+                        {item.name}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons - Always on top */}
                   <div className="absolute top-3 right-3 flex gap-2">
-                    <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all">
+                    <button className="w-8 h-8 bg-white bg-opacity-90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all">
                       <Heart size={16} className="text-gray-600" />
                     </button>
                     
@@ -966,7 +1021,7 @@ const Clothes = (): React.ReactElement => {
                     <div className="relative dropdown-container">
                       <button 
                         onClick={() => toggleDropdown(item.id)}
-                        className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all"
+                        className="w-8 h-8 bg-white bg-opacity-90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all"
                       >
                         <MoreHorizontal size={16} className="text-gray-600" />
                       </button>
@@ -992,10 +1047,6 @@ const Clothes = (): React.ReactElement => {
                       )}
                     </div>
                   </div>
-                  <div className="text-center">
-                    <ShoppingCart size={40} className="text-white mx-auto mb-2" />
-                    <div className="text-white text-xl font-bold">flashy fin</div>
-                  </div>
                 </div>
                 
                 {/* Card Content */}
@@ -1019,6 +1070,15 @@ const Clothes = (): React.ReactElement => {
           </div>
         )}
       </div>
+      
+      {/* Edit Form Sidebar */}
+      <AddClothesForm
+        isOpen={isEditFormOpen}
+        onClose={handleCloseEditForm}
+        editingItem={editingItem}
+        onEditSuccess={handleEditSuccess}
+        onCancel={handleCloseEditForm}
+      />
     </div>
   );
 };

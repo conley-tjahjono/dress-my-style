@@ -1,17 +1,43 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, Upload, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Upload, Plus, Image as ImageIcon, Link } from 'lucide-react';
 // @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
-interface AddClothesFormProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface ClothingItem {
+  id: string;
+  name: string;
+  brand: string;
+  image: string;
+  color: string;
+  tags: string[];
+  category: string;
+  size_type?: string;
+  size?: string;
+  price_min?: number;
+  price_max?: number;
+  image_url?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
+interface AddClothesFormProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  editingItem?: ClothingItem | null;
+  onEditSuccess?: (updatedItem: ClothingItem) => void;
+  onCancel?: () => void;
+}
+
+const AddClothesForm: React.FC<AddClothesFormProps> = ({ 
+  isOpen = false, 
+  onClose, 
+  editingItem = null, 
+  onEditSuccess, 
+  onCancel 
+}) => {
   const [activeTab, setActiveTab] = useState<'upload' | 'link'>('upload');
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -28,6 +54,60 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
   // Brand input state
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [brandInput, setBrandInput] = useState('');
+  
+  // Image upload state
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+
+  // Populate form when editing an item
+  useEffect(() => {
+    if (editingItem) {
+      console.log('🖊️ Populating form with editing item:', editingItem);
+      
+      // Parse colors from comma-separated string or use as array
+      const colorsArray = typeof editingItem.color === 'string' 
+        ? editingItem.color.split(',').map(c => c.trim()).filter(Boolean)
+        : Array.isArray(editingItem.color) 
+        ? editingItem.color 
+        : [editingItem.color || 'Black'];
+      
+      // Convert category from lowercase to proper case to match dropdown options
+      const properCaseCategory = editingItem.category 
+        ? editingItem.category.charAt(0).toUpperCase() + editingItem.category.slice(1).toLowerCase()
+        : '';
+      
+      console.log('🏷️ Category conversion:', editingItem.category, '→', properCaseCategory);
+      
+      setFormData({
+        name: editingItem.name || '',
+        category: properCaseCategory,
+        brand: editingItem.brand || '',
+        size: editingItem.size || '',
+        price: editingItem.price_min ? editingItem.price_min.toString() : '',
+        imageUrl: editingItem.image_url || editingItem.image || '',
+        colors: colorsArray,
+        tags: editingItem.tags || []
+      });
+      
+      setBrandInput(editingItem.brand || '');
+      setImagePreview(editingItem.image_url || editingItem.image || '');
+      
+      // Set active tab based on whether we have an image URL
+      if (editingItem.image_url || editingItem.image) {
+        setActiveTab('link');
+      }
+      
+      console.log('✅ Form populated with data:', {
+        name: editingItem.name,
+        category: properCaseCategory,
+        brand: editingItem.brand,
+        size: editingItem.size,
+        colors: colorsArray,
+        tags: editingItem.tags
+      });
+    }
+  }, [editingItem]);
 
   // Common clothing colors with names and hex values
   const colorOptions = [
@@ -194,6 +274,70 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
     }));
   };
 
+  // Image upload functions
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFiles(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      handleFiles(e.target.files[0]);
+    }
+  };
+
+  const handleFiles = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      setUploadedFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setImagePreview(result);
+        setFormData(prev => ({ ...prev, imageUrl: result }));
+      };
+      reader.readAsDataURL(file);
+      
+      console.log('📁 File selected:', file.name);
+    } else {
+      alert('Please select an image file (JPG, PNG, GIF, etc.)');
+    }
+  };
+
+  const clearImage = () => {
+    setUploadedFile(null);
+    setImagePreview('');
+    setFormData(prev => ({ ...prev, imageUrl: '' }));
+  };
+
+  // Handle URL input change
+  const handleUrlChange = (url: string) => {
+    setFormData(prev => ({ ...prev, imageUrl: url }));
+    if (url.trim()) {
+      setImagePreview(url);
+      setUploadedFile(null); // Clear file if URL is being used
+    } else {
+      setImagePreview('');
+    }
+  };
+
   // Get tag style based on category
   const getTagStyle = (tagName: string) => {
     const seasonalTag = seasonalTags.find(tag => tag.name === tagName);
@@ -217,7 +361,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
   const handleBrandBlur = (e: React.FocusEvent) => {
     // Delay to allow for dropdown clicks
     setTimeout(() => {
-      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
         setShowBrandDropdown(false);
       }
     }, 100);
@@ -227,28 +371,85 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
     e.preventDefault();
     
     try {
+      console.log('🚀 Form submission started!');
       console.log('🧺 Submitting form data:', formData);
+      console.log('🖼️ Image preview:', imagePreview);
+      console.log('📁 Uploaded file:', uploadedFile);
+      console.log('👤 User:', user);
       
       // Check if user is authenticated
       if (!user) {
+        console.log('❌ User not authenticated');
         alert('Please sign in to add clothes');
         return;
       }
+      console.log('✅ User authenticated');
+
+      // Validate required fields
+      console.log('🔍 Starting validation...');
+      
+      if (!formData.name.trim()) {
+        console.log('❌ Validation failed: Name is empty');
+        alert('❌ Please enter a name for the clothing item');
+        return;
+      }
+      console.log('✅ Name validation passed');
+
+      if (!formData.category) {
+        console.log('❌ Validation failed: Category not selected');
+        alert('❌ Please select a category');
+        return;
+      }
+      console.log('✅ Category validation passed');
+
+      if (!formData.brand.trim()) {
+        console.log('❌ Validation failed: Brand is empty');
+        alert('❌ Please enter or select a brand');
+        return;
+      }
+      console.log('✅ Brand validation passed');
+
+      if (!formData.size) {
+        console.log('❌ Validation failed: Size not selected');
+        alert('❌ Please select a size');
+        return;
+      }
+      console.log('✅ Size validation passed');
 
       // Validate price is positive
+      if (!formData.price.trim()) {
+        console.log('❌ Validation failed: Price is empty');
+        alert('❌ Please enter a price');
+        return;
+      }
+
       const price = parseFloat(formData.price);
       if (isNaN(price) || price <= 0) {
+        console.log('❌ Validation failed: Price is invalid:', price);
         alert('❌ Price must be a positive number');
         return;
       }
+      console.log('✅ Price validation passed');
 
       // Validate colors selection
       if (formData.colors.length === 0) {
+        console.log('❌ Validation failed: No colors selected');
         alert('❌ Please select at least one color');
         return;
       }
+      console.log('✅ Colors validation passed');
+
+      // Validate image URL or uploaded file
+      if (!formData.imageUrl.trim()) {
+        console.log('❌ Validation failed: No image URL or file');
+        alert('❌ Please upload an image or provide an image URL');
+        return;
+      }
+      console.log('✅ Image validation passed');
+      console.log('🎉 All validations passed!');
 
       // Prepare data for Supabase
+      console.log('🔄 Preparing data for Supabase...');
       const clothesData = {
         user_id: user.id,
         name: formData.name,
@@ -262,22 +463,97 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
         color: formData.colors.join(','), // Store colors as comma-separated string in existing color field
         tags: formData.tags
       };
+      console.log('📦 Prepared data:', clothesData);
 
-      // Insert into Supabase
+      // Insert or Update in Supabase
+      const isEditing = !!editingItem;
+      console.log(isEditing ? '💾 Updating in Supabase...' : '💾 Inserting into Supabase...');
       // @ts-expect-error - Supabase client type issue in demo mode
-      const { data, error } = await supabase
-        .from('clothes')
-        .insert([clothesData])
-        .select();
-
-      if (error) {
-        console.error('❌ Error saving clothes:', error);
-        alert('Error saving clothes: ' + error.message);
+      console.log('🔗 Supabase client:', supabase);
+      
+      // First, check if user exists in public.users table
+      console.log('👤 Checking if user exists in public.users...');
+      // @ts-expect-error - Supabase client type issue in demo mode
+      const { data: userCheck, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+      
+      if (userError) {
+        console.error('❌ User check error:', userError);
+        alert('User authentication issue. Please sign out and sign back in.');
         return;
       }
+      
+      if (!userCheck) {
+        console.error('❌ User not found in public.users table');
+        alert('User profile not found. Please sign out and sign back in.');
+        return;
+      }
+      console.log('✅ User exists in database');
+      
+      try {
+        // Add timeout to prevent hanging
+        let dbPromise;
+        if (isEditing && editingItem) {
+          console.log('🔄 Updating existing item with ID:', editingItem.id);
+          // @ts-expect-error - Supabase client type issue in demo mode
+          dbPromise = supabase
+            .from('clothes')
+            .update(clothesData)
+            .eq('id', editingItem.id)
+            .select();
+        } else {
+          console.log('➕ Creating new item');
+          // @ts-expect-error - Supabase client type issue in demo mode
+          dbPromise = supabase
+            .from('clothes')
+            .insert([clothesData])
+            .select();
+        }
+        
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database operation timed out')), 10000)
+        );
+        
+        const result = await Promise.race([dbPromise, timeoutPromise]);
+        
+        console.log('📤 Supabase result:', result);
+        const { data, error } = result;
 
-      console.log('✅ Clothes saved successfully:', data);
-      alert('Clothes added successfully! 🎉');
+        if (error) {
+          console.error('❌ Supabase error details:', error);
+          console.error('❌ Error code:', error.code);
+          console.error('❌ Error message:', error.message);
+          console.error('❌ Error details:', error.details);
+          alert('Error saving clothes: ' + error.message);
+          return;
+        }
+
+        console.log('✅ Clothes saved successfully:', data);
+        
+        if (isEditing) {
+          alert('Clothes updated successfully! 🎉');
+          // Call onEditSuccess with updated item if editing
+          if (onEditSuccess && data && data[0]) {
+            const updatedItem = {
+              ...editingItem,
+              ...data[0],
+              // Transform colors back to array if needed
+              color: data[0].color || editingItem.color,
+              tags: data[0].tags || editingItem.tags || []
+            };
+            onEditSuccess(updatedItem as ClothingItem);
+          }
+        } else {
+          alert('Clothes added successfully! 🎉');
+        }
+      } catch (dbError) {
+        console.error('💥 Database connection error:', dbError);
+        alert('Database connection failed. Please check your internet connection and try again.');
+        return;
+      }
       
       // Reset form
       setFormData({
@@ -293,41 +569,28 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
       setBrandInput('');
       setShowBrandDropdown(false);
       
-      onClose();
+      // Clear image states
+      setUploadedFile(null);
+      setImagePreview('');
+      setDragActive(false);
+      
+      // Call appropriate close callback
+      if (isEditing && onCancel) {
+        onCancel();
+      } else if (onClose) {
+        onClose();
+      }
     } catch (error) {
       console.error('💥 Unexpected error:', error);
       alert('Unexpected error occurred. Please try again.');
     }
   };
 
+  // Show sidebar when isOpen is true (both add and edit modes)
   if (!isOpen) return null;
 
-  return (
-    <>
-      {/* Backdrop with enhanced blur effect for better focus */}
-      <div 
-        className={`fixed inset-0 z-40 transition-all duration-300 ${
-          isOpen 
-            ? 'backdrop-blur-md opacity-70' 
-            : 'backdrop-blur-none opacity-0 pointer-events-none'
-        }`}
-        onClick={onClose}
-      />
-      
-      {/* Sidebar with smooth slide animation and enhanced focus */}
-      <div className={`fixed right-0 top-0 h-full w-96 bg-white z-50 shadow-[0_0_50px_rgba(0,0,0,0.15)] border-l border-gray-100 transform transition-all duration-300 ease-in-out ${
-        isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-      }`}>
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="p-6">
-            <div>
-              <h2 className="text-xl font-semibold">Add Clothes</h2>
-              <p className="text-sm text-gray-500">Fill in the necessary items</p>
-            </div>
-          </div>
-
-          {/* Form Content */}
+  // Render the form content (shared between modal and sidebar modes)
+  const formContent = (
           <div className="flex-1 overflow-y-auto p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Upload/Link Tabs */}
@@ -359,24 +622,112 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
 
                 {/* Upload Tab Content */}
                 {activeTab === 'upload' && (
-                  <button
-                    type="button"
-                    className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
-                  >
-                    <Upload size={16} className="text-gray-400" />
-                    <span className="text-sm text-gray-600">Upload File</span>
-                  </button>
+                  <div className="space-y-4">
+                    {/* Drag & Drop Area */}
+                    <div
+                      className={`relative w-full border-2 border-dashed rounded-lg transition-all ${
+                        dragActive 
+                          ? 'border-green-500 bg-green-50' 
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      onDragEnter={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDragOver={handleDrag}
+                      onDrop={handleDrop}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      
+                      {imagePreview ? (
+                        /* Image Preview */
+                        <div className="relative p-4">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-48 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={clearImage}
+                            className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                          >
+                            <X size={14} />
+                          </button>
+                          <div className="mt-2 text-center">
+                            <p className="text-sm text-gray-600">
+                              {uploadedFile ? `📁 ${uploadedFile.name}` : '🔗 Image from URL'}
+                            </p>
+                            <p className="text-xs text-gray-400">Click to change image</p>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Upload Area */
+                        <div className="flex flex-col items-center justify-center py-12 px-4">
+                          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <Upload size={24} className="text-gray-400" />
+                          </div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            {dragActive ? 'Drop image here' : 'Upload an image'}
+                          </h3>
+                          <p className="text-sm text-gray-500 text-center mb-4">
+                            Drag and drop your image here, or click to browse
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <ImageIcon size={14} />
+                            <span>JPG, PNG, GIF up to 10MB</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
 
                 {/* Link Tab Content */}
                 {activeTab === 'link' && (
-                  <input
-                    type="url"
-                    placeholder="Insert image Url"
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
+                  <div className="space-y-4">
+                    {/* URL Input */}
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <Link size={16} className="text-gray-400" />
+                      </div>
+                      <input
+                        type="url"
+                        placeholder="https://example.com/image.jpg"
+                        value={formData.imageUrl}
+                        onChange={(e) => handleUrlChange(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                    
+                    {/* Image Preview for URL */}
+                    {imagePreview && (
+                      <div className="relative">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-48 object-cover rounded-lg"
+                          onError={() => {
+                            setImagePreview('');
+                            console.log('❌ Failed to load image from URL');
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={clearImage}
+                          className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                        <div className="mt-2 text-center">
+                          <p className="text-xs text-gray-400">🔗 Image from URL</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -646,10 +997,43 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({ isOpen, onClose }) => {
                 type="submit"
                 className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
               >
-                Submit
+                {editingItem ? 'Update Item' : 'Add Item'}
               </button>
             </form>
           </div>
+  );
+
+  // Always return the sidebar mode
+  return (
+    <>
+      {/* Backdrop with enhanced blur effect for better focus */}
+      <div 
+        className={`fixed inset-0 z-40 transition-all duration-300 ${
+          isOpen 
+            ? 'backdrop-blur-md opacity-70' 
+            : 'backdrop-blur-none opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
+      
+      {/* Sidebar with smooth slide animation and enhanced focus */}
+      <div className={`fixed right-0 top-0 h-full w-96 bg-white z-50 shadow-[0_0_50px_rgba(0,0,0,0.15)] border-l border-gray-100 transform transition-all duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      }`}>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="p-6">
+            <div>
+              <h2 className="text-xl font-semibold">
+                {editingItem ? 'Edit Clothes' : 'Add Clothes'}
+              </h2>
+              <p className="text-sm text-gray-500">
+                {editingItem ? 'Update your clothing item' : 'Fill in the necessary items'}
+              </p>
+            </div>
+          </div>
+          
+          {formContent}
         </div>
       </div>
     </>
