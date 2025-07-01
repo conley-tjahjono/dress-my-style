@@ -351,18 +351,37 @@ const Clothes = (): React.ReactElement => {
     );
   }, [colorSearchTerm, allColors]);
 
-  // Comprehensive brand list
-  const allBrands = [
-    'Adidas', 'Aerie', 'American Eagle', 'ASOS', 'Banana Republic',
-    'Burberry', 'Calvin Klein', 'Champion', 'Coach', 'Columbia',
-    'Converse', 'Dickies', 'Fila', 'Forever 21', 'Gap',
-    'Gucci', 'Gymshark', 'H&M', 'Hugo Boss', 'J.Crew',
-    'Kate Spade', 'Lacoste', 'Levi\'s', 'Louis Vuitton', 'Lululemon',
-    'Michael Kors', 'Nike', 'Old Navy', 'Patagonia', 'Polo Ralph Lauren',
-    'Prada', 'Puma', 'Reebok', 'Target', 'The North Face',
-    'Tommy Hilfiger', 'Under Armour', 'Uniqlo', 'Urban Outfitters', 'Vans',
-    'Versace', 'Victoria\'s Secret', 'Walmart', 'Zara', 'Other'
-  ].sort();
+  // Dynamic brand list from user's actual clothing items
+  const allBrands = useMemo(() => {
+    const uniqueBrands = [...new Set(clothingItems.map(item => item.brand))];
+    return uniqueBrands.sort();
+  }, [clothingItems]);
+
+  // Dynamic size lists based on user's actual clothing items and their categories
+  const allGarmentSizes = useMemo(() => {
+    const garmentCategories = ['shirts', 'pants', 'dresses', 'jackets', 'sweaters'];
+    const sizes = clothingItems
+      .filter(item => garmentCategories.includes(item.category.toLowerCase()) && item.size)
+      .map(item => item.size!)
+      .filter(Boolean);
+    return [...new Set(sizes)].sort();
+  }, [clothingItems]);
+
+  const allAccessorySizes = useMemo(() => {
+    const sizes = clothingItems
+      .filter(item => item.category.toLowerCase() === 'accessories' && item.size)
+      .map(item => item.size!)
+      .filter(Boolean);
+    return [...new Set(sizes)].sort();
+  }, [clothingItems]);
+
+  const allShoeSizes = useMemo(() => {
+    const sizes = clothingItems
+      .filter(item => item.category.toLowerCase() === 'shoes' && item.size)
+      .map(item => item.size!)
+      .filter(Boolean);
+    return [...new Set(sizes)].sort();
+  }, [clothingItems]);
 
   // Filter brands based on search term
   const filteredBrands = useMemo(() => {
@@ -824,7 +843,11 @@ const Clothes = (): React.ReactElement => {
             {/* No Results Message */}
             {filteredBrands.length === 0 && (
               <div className="text-center py-4 text-sm text-gray-500">
-                No brands found for "{brandSearchTerm}"
+                {brandSearchTerm ? (
+                  <>No brands found for "{brandSearchTerm}"</>
+                ) : (
+                  <>No clothing items in your closet yet</>
+                )}
               </div>
             )}
           </div>
@@ -832,54 +855,107 @@ const Clothes = (): React.ReactElement => {
 
         {/* Garment Size Section */}
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">Garment Size</h3>
-          <div className="space-y-2">
-            {['S', 'M', 'L'].map((size) => (
-              <label key={size} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={selectedSizes.includes(size)}
-                  onChange={() => toggleSize(size)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">{size}</span>
-              </label>
-            ))}
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-900">Garment Size</h3>
+            {selectedSizes.length > 0 && (
+              <button
+                onClick={() => setSelectedSizes([])}
+                className="text-xs text-red-500 hover:text-red-700 transition-colors"
+              >
+                Clear All
+              </button>
+            )}
           </div>
+          
+          {allGarmentSizes.length > 0 ? (
+            <div className="space-y-2">
+              {allGarmentSizes.map((size) => (
+                <label key={size} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedSizes.includes(size)}
+                    onChange={() => toggleSize(size)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{size}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-sm text-gray-500">
+              No garment sizes in your closet yet
+            </div>
+          )}
         </div>
 
         {/* Accessory Size Section */}
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">Accessory Size</h3>
-          <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={selectedAccessorySizes.includes('16')}
-                onChange={() => toggleAccessorySize('16')}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">16</span>
-            </label>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-900">Accessory Size</h3>
+            {selectedAccessorySizes.length > 0 && (
+              <button
+                onClick={() => setSelectedAccessorySizes([])}
+                className="text-xs text-red-500 hover:text-red-700 transition-colors"
+              >
+                Clear All
+              </button>
+            )}
           </div>
+          
+          {allAccessorySizes.length > 0 ? (
+            <div className="space-y-2">
+              {allAccessorySizes.map((size) => (
+                <label key={size} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedAccessorySizes.includes(size)}
+                    onChange={() => toggleAccessorySize(size)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{size}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-sm text-gray-500">
+              No accessory sizes in your closet yet
+            </div>
+          )}
         </div>
 
         {/* Shoe Size Section */}
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">Shoe Size</h3>
-          <div className="space-y-2">
-            {['10', '11'].map((size) => (
-              <label key={size} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={selectedShoeSizes.includes(size)}
-                  onChange={() => toggleShoeSize(size)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">{size}</span>
-              </label>
-            ))}
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-900">Shoe Size</h3>
+            {selectedShoeSizes.length > 0 && (
+              <button
+                onClick={() => setSelectedShoeSizes([])}
+                className="text-xs text-red-500 hover:text-red-700 transition-colors"
+              >
+                Clear All
+              </button>
+            )}
           </div>
+          
+          {allShoeSizes.length > 0 ? (
+            <div className="space-y-2">
+              {allShoeSizes.map((size) => (
+                <label key={size} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedShoeSizes.includes(size)}
+                    onChange={() => toggleShoeSize(size)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{size}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-sm text-gray-500">
+              No shoe sizes in your closet yet
+            </div>
+          )}
         </div>
 
         {/* Filter Buttons */}
