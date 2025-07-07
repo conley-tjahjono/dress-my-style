@@ -18,6 +18,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  showTimeoutWarning: boolean;
+  extendSession: () => void;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error?: unknown }>;
   signIn: (email: string, password: string) => Promise<{ error?: unknown }>;
   signOut: () => Promise<void>;
@@ -36,6 +38,12 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Session timeout settings (30 minutes of inactivity)
+  const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+  const WARNING_TIME = 5 * 60 * 1000; // 5 minutes warning before logout
+  const [lastActivity, setLastActivity] = useState<number>(Date.now());
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState<boolean>(false);
 
   useEffect(() => {
     let mounted = true;
@@ -176,6 +184,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // Track user activity and auto-logout on inactivity
+  useEffect(() => {
+    if (!user) return;
+
+    // Activity tracking function
+    const updateActivity = () => {
+      setLastActivity(Date.now());
+      setShowTimeoutWarning(false); // Reset warning on activity
+      console.log('🔄 User activity detected, updating last activity time');
+    };
+
+    // Events that indicate user activity
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+
+    // Add event listeners
+    activityEvents.forEach(event => {
+      document.addEventListener(event, updateActivity, true);
+    });
+
+    // Check for inactivity every minute
+    const checkInactivity = setInterval(() => {
+      const now = Date.now();
+      const timeSinceLastActivity = now - lastActivity;
+      
+      console.log('⏰ Checking user activity - Time since last activity:', Math.round(timeSinceLastActivity / 1000 / 60), 'minutes');
+      
+      // Show warning 5 minutes before logout
+      if (timeSinceLastActivity > (SESSION_TIMEOUT - WARNING_TIME) && !showTimeoutWarning) {
+        console.log('⚠️ Showing session timeout warning');
+        setShowTimeoutWarning(true);
+      }
+      
+      // Logout user after timeout
+      if (timeSinceLastActivity > SESSION_TIMEOUT) {
+        console.log('🚪 Session expired due to inactivity, logging out user');
+        signOut();
+      }
+    }, 60000); // Check every minute
+
+    // Cleanup
+    return () => {
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, updateActivity, true);
+      });
+      clearInterval(checkInactivity);
+    };
+  }, [user, lastActivity, SESSION_TIMEOUT]);
+
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       console.log('📝 Starting signup process...');
@@ -224,14 +280,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await typedSupabase.auth.signOut();
       if (error) throw error;
       setUser(null);
+      setShowTimeoutWarning(false);
     } catch (error) {
       console.error('Signout error:', error);
     }
   };
 
+  const extendSession = () => {
+    console.log('🔄 Session extended by user action');
+    setLastActivity(Date.now());
+    setShowTimeoutWarning(false);
+  };
+
   const value: AuthContextType = {
     user,
     loading,
+    showTimeoutWarning,
+    extendSession,
     signUp,
     signIn,
     signOut
