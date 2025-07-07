@@ -20,8 +20,9 @@ const NavigationTabs = (): React.ReactElement => {
 
   const tabs: TabConfig[] = [
     { id: 'clothes', label: 'Clothes', icon: Tag, component: <Clothes /> },
-    { id: 'outfits', label: 'Outfits', icon: Package, component: <Outfits /> },
-    { id: 'analytics', label: 'Analytics', icon: PieChart, component: <Analytics /> }
+    // Temporarily hiding these tabs
+    // { id: 'outfits', label: 'Outfits', icon: Package, component: <Outfits /> },
+    // { id: 'analytics', label: 'Analytics', icon: PieChart, component: <Analytics /> }
   ];
 
   const getActiveTab = () => tabs.find(tab => tab.id === activeTab)?.component || <Clothes />;
