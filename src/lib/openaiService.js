@@ -85,7 +85,7 @@ Please provide a personalized outfit recommendation with:
       console.log('💰 Tokens used:', response.usage.total_tokens);
       
       return {
-        content: response.choices[0].message.content,
+        content: response.choices[0].message.content || 'Sorry, I had trouble generating a response. Please try again.',
         tokensUsed: response.usage.total_tokens,
         cost: calculateCost(response.usage.total_tokens),
         isAI: true
@@ -137,7 +137,7 @@ Provide a helpful follow-up response that considers the previous conversation co
       });
 
       return {
-        content: response.choices[0].message.content,
+        content: response.choices[0].message.content || 'Sorry, I had trouble generating a response. Please try again.',
         tokensUsed: response.usage.total_tokens,
         cost: calculateCost(response.usage.total_tokens),
         isAI: true
@@ -180,7 +180,7 @@ Provide style feedback, improvements, and alternative suggestions.`;
       });
 
       return {
-        content: response.choices[0].message.content,
+        content: response.choices[0].message.content || 'Sorry, I had trouble generating a response. Please try again.',
         tokensUsed: response.usage.total_tokens,
         cost: calculateCost(response.usage.total_tokens),
         isAI: true

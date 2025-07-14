@@ -13,7 +13,7 @@ interface Message {
   type: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  recommendations?: any;
+  recommendations?: ClothingItem[] | null;
 }
 
 interface ClothingItem {
