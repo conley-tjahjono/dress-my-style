@@ -5,11 +5,13 @@ import { Plus, Zap, LogOut, User } from 'lucide-react';
 import NavigationTabs from './NavigationTabs';
 import AddClothesForm from './AddClothesForm';
 import AuthModal from './AuthModal';
+import AIAssistant from './AIAssistant';
 import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
   const [showAddClothesForm, setShowAddClothesForm] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
   const { user, loading, showTimeoutWarning, extendSession, signOut } = useAuth();
 
   return (
@@ -38,6 +40,7 @@ const Header = () => {
                 
                 {/* AI Assistant Button */}
             <button
+              onClick={() => setShowAIAssistant(true)}
               className="flex items-center gap-2 h-10 px-5 rounded-lg border border-[var(--bg-positive-hover)] bg-[var(--bg-positive-secondary)] hover:bg-[var(--bg-positive-default)] transition-colors min-w-[138px]"
             >
               <Zap size={16} strokeWidth={1.6} className="text-[var(--bg-positive-hover)]" />
@@ -79,6 +82,14 @@ const Header = () => {
         <AddClothesForm 
           isOpen={showAddClothesForm}
           onClose={() => setShowAddClothesForm(false)}
+        />
+      )}
+
+      {/* AI Assistant Sidebar */}
+      {user && (
+        <AIAssistant 
+          isOpen={showAIAssistant}
+          onClose={() => setShowAIAssistant(false)}
         />
       )}
 
