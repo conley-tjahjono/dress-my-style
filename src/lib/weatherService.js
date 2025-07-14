@@ -55,7 +55,8 @@ export const weatherService = {
         icon: data.weather[0].icon,
         windSpeed: data.wind?.speed || 0,
         city: data.name,
-        country: data.sys.country
+        country: data.sys.country,
+        isDemo: false
       };
     } catch (error) {
       console.error('❌ Weather fetch error:', error);
@@ -88,7 +89,8 @@ export const weatherService = {
         icon: data.weather[0].icon,
         windSpeed: data.wind?.speed || 0,
         city: data.name,
-        country: data.sys.country
+        country: data.sys.country,
+        isDemo: false
       };
     } catch (error) {
       console.error('❌ Weather fetch error:', error);
