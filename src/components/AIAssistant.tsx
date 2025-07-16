@@ -270,157 +270,172 @@ What can I help you with? 😊`,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
-      <div className="bg-white w-full max-w-md h-full flex flex-col shadow-xl">
-        {/* Header */}
-        <div className="bg-green-500 text-white p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <Zap size={20} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold">AI Assistant</h2>
-              <p className="text-sm text-green-100">Your personal style advisor</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Weather Info */}
-        {currentWeather && (
-          <div className="bg-gray-50 p-3 border-b">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <MapPin size={16} />
-              <span>{currentWeather.city}</span>
-              <Thermometer size={16} />
-              <span>{currentWeather.temperature}°F</span>
-              <span className="capitalize">{currentWeather.description}</span>
-              {currentWeather.isDemo && (
-                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Demo</span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        <div className="p-3 border-b bg-gray-50">
-          <p className="text-xs text-gray-500 mb-2">Quick suggestions:</p>
-          <div className="flex flex-wrap gap-2">
-            {[
-              "What should I wear today?",
-              "Work outfit",
-              "Casual outfit",
-              "Date night look"
-            ].map((action) => (
-              <button
-                key={action}
-                onClick={() => handleQuickAction(action)}
-                className="text-xs bg-white border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-50 transition-colors"
-                disabled={isLoading}
-              >
-                {action}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  message.type === 'user'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-100 text-gray-900'
-                }`}
-              >
-                <p className="text-sm whitespace-pre-line">{message.content}</p>
-                
-                {/* Recommended Items */}
-                {message.recommendations && message.recommendations.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    <p className="text-xs font-medium text-gray-600">Recommended items:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {message.recommendations.slice(0, 4).map((item: ClothingItem) => (
-                        <div key={item.id} className="bg-white rounded-lg p-2 shadow-sm">
-                          <div className="aspect-square bg-gray-200 rounded-md mb-1 overflow-hidden">
-                            {item.image_url ? (
-                              <img 
-                                src={item.image_url} 
-                                alt={item.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                <MessageCircle size={16} />
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-xs font-medium text-gray-900 truncate">{item.name}</p>
-                          <p className="text-xs text-gray-500 truncate">{item.brand}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <p className="text-xs opacity-70 mt-2">
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+    <>
+      {/* Backdrop with enhanced blur effect for better focus */}
+      <div 
+        className={`fixed inset-0 z-40 transition-all duration-300 ${
+          isOpen 
+            ? 'backdrop-blur-md opacity-70' 
+            : 'backdrop-blur-none opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
+      
+      {/* Sidebar with smooth slide animation and enhanced focus */}
+      <div className={`fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-[0_0_50px_rgba(0,0,0,0.15)] border-l border-gray-100 transform transition-all duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      }`}>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="bg-green-500 text-white p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <Zap size={20} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">AI Assistant</h2>
+                <p className="text-sm text-green-100">Your personal style advisor</p>
               </div>
             </div>
-          ))}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 rounded-lg px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
-                  <span className="text-xs text-gray-500">AI is thinking...</span>
-                </div>
+            <button
+              onClick={onClose}
+              className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Weather Info */}
+          {currentWeather && (
+            <div className="bg-gray-50 p-3 border-b">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <MapPin size={16} />
+                <span>{currentWeather.city}</span>
+                <Thermometer size={16} />
+                <span>{currentWeather.temperature}°F</span>
+                <span className="capitalize">{currentWeather.description}</span>
+                {currentWeather.isDemo && (
+                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Demo</span>
+                )}
               </div>
             </div>
           )}
-          
-          <div ref={messagesEndRef} />
-        </div>
 
-        {/* Input */}
-        <div className="p-4 border-t bg-white">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask me about outfits..."
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              disabled={isLoading}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isLoading}
-              className="bg-green-500 text-white rounded-lg px-4 py-2 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send size={16} />
-            </button>
+          {/* Quick Actions */}
+          <div className="p-3 border-b bg-gray-50">
+            <p className="text-xs text-gray-500 mb-2">Quick suggestions:</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "What should I wear today?",
+                "Work outfit",
+                "Casual outfit",
+                "Date night look"
+              ].map((action) => (
+                <button
+                  key={action}
+                  onClick={() => handleQuickAction(action)}
+                  className="text-xs bg-white border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-50 transition-colors"
+                  disabled={isLoading}
+                >
+                  {action}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    message.type === 'user'
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-100 text-gray-900'
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-line">{message.content}</p>
+                  
+                  {/* Recommended Items */}
+                  {message.recommendations && message.recommendations.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs font-medium text-gray-600">Recommended items:</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {message.recommendations.slice(0, 4).map((item: ClothingItem) => (
+                          <div key={item.id} className="bg-white rounded-lg p-2 shadow-sm">
+                            <div className="aspect-square bg-gray-200 rounded-md mb-1 overflow-hidden">
+                              {item.image_url ? (
+                                <img 
+                                  src={item.image_url} 
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                  <MessageCircle size={16} />
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs font-medium text-gray-900 truncate">{item.name}</p>
+                            <p className="text-xs text-gray-500 truncate">{item.brand}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <p className="text-xs opacity-70 mt-2">
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 rounded-lg px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                    <span className="text-xs text-gray-500">AI is thinking...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="p-4 border-t bg-white">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask me about outfits..."
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                disabled={isLoading}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim() || isLoading}
+                className="bg-green-500 text-white rounded-lg px-4 py-2 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Send size={16} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
