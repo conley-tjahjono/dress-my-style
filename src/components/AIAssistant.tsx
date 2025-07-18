@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Zap, MessageCircle, MapPin, Thermometer, ImageIcon } from 'lucide-react';
+import { X, Send, Zap, MessageCircle, MapPin, Thermometer, ImageIcon, Sun, Moon, Clock } from 'lucide-react';
 import { weatherService } from '../lib/weatherService';
 import { openaiService } from '../lib/openaiService';
 // @ts-expect-error - Supabase client type issue in demo mode
@@ -314,11 +314,11 @@ What can I help you with? 😊`,
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1">
-                    <span>☀️</span>
+                    <Sun size={16} />
                     <span>6:30 AM</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span>🌙</span>
+                    <Moon size={16} />
                     <span>8:00 PM</span>
                   </div>
                 </div>
