@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Zap, MessageCircle, MapPin, Thermometer } from 'lucide-react';
+import { X, Send, Zap, MessageCircle, MapPin, Thermometer, ImageIcon } from 'lucide-react';
 import { weatherService } from '../lib/weatherService';
 import { openaiService } from '../lib/openaiService';
 // @ts-expect-error - Supabase client type issue in demo mode
@@ -287,123 +287,136 @@ What can I help you with? 😊`,
       }`}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="bg-green-500 text-white p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <Zap size={20} className="text-white" />
-              </div>
+          <div className="bg-white p-6 border-b border-gray-100">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold">AI Assistant</h2>
-                <p className="text-sm text-green-100">Your personal style advisor</p>
+                <h2 className="text-xl font-bold text-gray-800">Personal Stylist AI</h2>
+                <p className="text-sm text-gray-500">Ask anything to help you pick your clothes for the day</p>
               </div>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 p-2 transition-colors"
+              >
+                <X size={20} />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
 
-          {/* Weather Info */}
-          {currentWeather && (
-            <div className="bg-gray-50 p-3 border-b">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <MapPin size={16} />
-                <span>{currentWeather.city}</span>
-                <Thermometer size={16} />
-                <span>{currentWeather.temperature}°F</span>
-                <span className="capitalize">{currentWeather.description}</span>
-                {currentWeather.isDemo && (
-                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Demo</span>
-                )}
+            {/* Weather Display */}
+            {currentWeather && (
+              <div className="flex items-center justify-between text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <MapPin size={16} />
+                  <span>{currentWeather.city}, {currentWeather.country}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Thermometer size={16} />
+                  <span>{currentWeather.temperature}°F / {Math.round((currentWeather.temperature - 32) * 5/9)}°C</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1">
+                    <span>☀️</span>
+                    <span>6:30 AM</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span>🌙</span>
+                    <span>8:00 PM</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Quick Actions */}
-          <div className="p-3 border-b bg-gray-50">
-            <p className="text-xs text-gray-500 mb-2">Quick suggestions:</p>
-            <div className="flex flex-wrap gap-2">
-              {[
-                "What should I wear today?",
-                "Work outfit",
-                "Casual outfit",
-                "Date night look"
-              ].map((action) => (
-                <button
-                  key={action}
-                  onClick={() => handleQuickAction(action)}
-                  className="text-xs bg-white border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-50 transition-colors"
-                  disabled={isLoading}
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
+            )}
           </div>
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    message.type === 'user'
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-line">{message.content}</p>
-                  
-                  {/* Recommended Items */}
-                  {message.recommendations && message.recommendations.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      <p className="text-xs font-medium text-gray-600">Recommended items:</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {message.recommendations.slice(0, 4).map((item: ClothingItem) => (
-                          <div key={item.id} className="bg-white rounded-lg p-2 shadow-sm">
-                            <div className="aspect-square bg-gray-200 rounded-md mb-1 overflow-hidden">
-                              {item.image_url ? (
-                                <img 
-                                  src={item.image_url} 
-                                  alt={item.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                  <MessageCircle size={16} />
-                                </div>
-                              )}
-                            </div>
-                            <p className="text-xs font-medium text-gray-900 truncate">{item.name}</p>
-                            <p className="text-xs text-gray-500 truncate">{item.brand}</p>
-                          </div>
-                        ))}
-                      </div>
+            {messages.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Zap size={24} className="text-purple-600" />
+                </div>
+                <p className="text-lg font-medium mb-2">Hi! I'm your AI stylist</p>
+                <p className="text-sm">Ask me anything about your outfits and I'll help you look amazing!</p>
+              </div>
+            ) : (
+              messages.map((message) => (
+                <div key={message.id} className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {message.type === 'assistant' && (
+                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-sm font-medium">AI</span>
                     </div>
                   )}
                   
-                  <p className="text-xs opacity-70 mt-2">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                  <div className={`max-w-[280px] ${message.type === 'user' ? 'order-first' : ''}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-medium text-gray-600">
+                        {message.type === 'user' ? 'You' : 'Orlando Diggs'}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {message.timestamp.toLocaleTimeString([], { 
+                          weekday: 'short',
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                    </div>
+                    
+                    <div className={`p-3 rounded-2xl ${
+                      message.type === 'user' 
+                        ? 'bg-purple-600 text-white rounded-br-md' 
+                        : 'bg-gray-100 text-gray-800 rounded-bl-md'
+                    }`}>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                    </div>
+
+                    {/* Recommendations */}
+                    {message.recommendations && message.recommendations.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs text-gray-500 font-medium">Recommended items:</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {message.recommendations.slice(0, 4).map((item: ClothingItem) => (
+                            <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-2">
+                              <div className="aspect-square bg-gray-100 rounded-md mb-2 overflow-hidden">
+                                {item.image_url || item.image ? (
+                                  <img 
+                                    src={item.image_url || item.image} 
+                                    alt={item.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <ImageIcon size={20} className="text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs font-medium text-gray-800 truncate">{item.name}</p>
+                              <p className="text-xs text-gray-500 truncate">{item.brand}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {message.type === 'user' && (
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-sm font-medium">You</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              ))
+            )}
             
             {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    </div>
-                    <span className="text-xs text-gray-500">AI is thinking...</span>
+              <div className="flex gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-sm font-medium">AI</span>
+                </div>
+                <div className="bg-gray-100 rounded-2xl rounded-bl-md p-3">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                 </div>
               </div>
@@ -412,22 +425,40 @@ What can I help you with? 😊`,
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="p-4 border-t bg-white">
+          {/* Quick Actions */}
+          <div className="p-4 border-t border-gray-100">
+            <div className="flex flex-wrap gap-2 mb-4">
+              {[
+                "What should I wear today?",
+                "Date Night Outfit",
+                "Athletic Outfit"
+              ].map((action) => (
+                <button
+                  key={action}
+                  onClick={() => handleQuickAction(action)}
+                  className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 transition-colors"
+                  disabled={isLoading}
+                >
+                  {action}
+                </button>
+              ))}
+            </div>
+
+            {/* Input */}
             <div className="flex gap-2">
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask me about outfits..."
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                placeholder="Message"
+                className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                 disabled={isLoading}
               />
               <button
                 onClick={handleSendMessage}
-                disabled={!inputMessage.trim() || isLoading}
-                className="bg-green-500 text-white rounded-lg px-4 py-2 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                disabled={isLoading || !inputMessage.trim()}
+                className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white rounded-lg p-3 transition-colors"
               >
                 <Send size={16} />
               </button>
