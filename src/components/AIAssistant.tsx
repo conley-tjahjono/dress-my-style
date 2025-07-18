@@ -334,7 +334,14 @@ What can I help you with? 😊`,
                   <Zap size={24} className="text-purple-600" />
                 </div>
                 <p className="text-lg font-medium mb-2">Hi! I'm your AI stylist</p>
-                <p className="text-sm">Ask me anything about your outfits and I'll help you look amazing!</p>
+                {userClothes.length === 0 ? (
+                  <div className="text-sm space-y-2">
+                    <p>I'd love to help you create amazing outfits!</p>
+                    <p className="text-purple-600 font-medium">Start by adding some clothes to your wardrobe, then I can give you personalized recommendations.</p>
+                  </div>
+                ) : (
+                  <p className="text-sm">Ask me anything about your outfits and I'll help you look amazing using the {userClothes.length} items in your wardrobe!</p>
+                )}
               </div>
             ) : (
               messages.map((message) => (
@@ -428,20 +435,39 @@ What can I help you with? 😊`,
           {/* Quick Actions */}
           <div className="p-4 border-t border-gray-100">
             <div className="flex flex-wrap gap-2 mb-4">
-              {[
-                "What should I wear today?",
-                "Date Night Outfit",
-                "Athletic Outfit"
-              ].map((action) => (
-                <button
-                  key={action}
-                  onClick={() => handleQuickAction(action)}
-                  className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 transition-colors"
-                  disabled={isLoading}
-                >
-                  {action}
-                </button>
-              ))}
+              {userClothes.length === 0 ? (
+                // Show different actions when no clothes
+                [
+                  "Help me start my wardrobe",
+                  "What basics should I add?",
+                  "Style tips for beginners"
+                ].map((action) => (
+                  <button
+                    key={action}
+                    onClick={() => handleQuickAction(action)}
+                    className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 transition-colors"
+                    disabled={isLoading}
+                  >
+                    {action}
+                  </button>
+                ))
+              ) : (
+                // Show outfit suggestions when they have clothes
+                [
+                  "What should I wear today?",
+                  "Date Night Outfit",
+                  "Athletic Outfit"
+                ].map((action) => (
+                  <button
+                    key={action}
+                    onClick={() => handleQuickAction(action)}
+                    className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 transition-colors"
+                    disabled={isLoading}
+                  >
+                    {action}
+                  </button>
+                ))
+              )}
             </div>
 
             {/* Input */}
