@@ -1302,11 +1302,11 @@ const Clothes = (): React.ReactElement => {
                 <div className="p-4">
                   <h3 className="font-medium text-gray-900 mb-1">{item.name}</h3>
                   <p className="text-sm text-gray-500 mb-3">{item.brand}</p>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
                     {item.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
+                        className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded whitespace-nowrap flex-shrink-0"
                       >
                         {tag}
                       </span>
