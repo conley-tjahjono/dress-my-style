@@ -578,7 +578,22 @@ const Clothes = (): React.ReactElement => {
     
     // Close the edit form
     handleCloseEditForm();
-    console.log('🎉 Edit success handling complete');
+  };
+
+  // Handle successful add
+  const handleAddSuccess = (newItem: ClothingItem) => {
+    console.log('🔄 Handling add success for new item:', newItem.id);
+    console.log('📝 New item data:', newItem);
+    
+    // Add the new item to the local state
+    setClothingItems(prev => {
+      const updated = [newItem, ...prev]; // Add to beginning to match created_at desc order
+      console.log('✅ New clothing item added to state');
+      return updated;
+    });
+    
+    // Close the add form
+    handleCloseEditForm();
   };
 
   // Handle delete clothing item
@@ -1296,6 +1311,7 @@ const Clothes = (): React.ReactElement => {
         editingItem={editingItem}
         onEditSuccess={handleEditSuccess}
         onCancel={handleCloseEditForm}
+        onAddSuccess={handleAddSuccess}
       />
     </div>
   );
