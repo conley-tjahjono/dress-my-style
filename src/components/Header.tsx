@@ -82,6 +82,12 @@ const Header = () => {
         <AddClothesForm 
           isOpen={showAddClothesForm}
           onClose={() => setShowAddClothesForm(false)}
+          onAddSuccess={(newItem) => {
+            // Close the form
+            setShowAddClothesForm(false);
+            // Dispatch custom event to notify Clothes component
+            window.dispatchEvent(new CustomEvent('clothesAdded', { detail: newItem }));
+          }}
         />
       )}
 

@@ -642,8 +642,24 @@ const Clothes = (): React.ReactElement => {
   // Add click outside listener
   useEffect(() => {
     document.addEventListener('mousedown', handleClickOutside);
+    
+    // Listen for clothes added from Header component
+    const handleClothesAdded = (event: CustomEvent) => {
+      const newItem = event.detail;
+      console.log('🔄 Received clothesAdded event:', newItem);
+      // Add the new item to the local state
+      setClothingItems(prev => {
+        const updated = [newItem, ...prev];
+        console.log('✅ New clothing item added to state from Header');
+        return updated;
+      });
+    };
+    
+    window.addEventListener('clothesAdded', handleClothesAdded as EventListener);
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('clothesAdded', handleClothesAdded as EventListener);
     };
   }, []);
 
