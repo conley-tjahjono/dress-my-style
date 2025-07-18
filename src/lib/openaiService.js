@@ -85,7 +85,7 @@ Remember: Only use items that are explicitly listed in their wardrobe above!`;
       // Make actual OpenAI API call
       console.log('📡 Calling OpenAI API...');
       const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo", // Using GPT-3.5 for cost efficiency
+        model: "gpt-4o-mini", // Using GPT-4o mini for better quality while maintaining cost efficiency
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -137,7 +137,7 @@ Current weather: ${weather?.temperature}°F, ${weather?.description} in ${weathe
 Provide a helpful follow-up response that considers the previous conversation context and current weather.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
         messages: [
           { 
             role: "system", 
@@ -180,7 +180,7 @@ Provide a helpful follow-up response that considers the previous conversation co
 Provide style feedback, improvements, and alternative suggestions.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
         messages: [
           { 
             role: "system", 
@@ -211,13 +211,13 @@ Provide style feedback, improvements, and alternative suggestions.`;
 
 // Cost calculation for OpenAI usage
 const calculateCost = (tokens) => {
-  // GPT-3.5-turbo pricing (as of 2024): $0.001 per 1K prompt tokens, $0.002 per 1K completion tokens
-  const inputCost = 0.001 / 1000;
-  const outputCost = 0.002 / 1000;
+  // GPT-4o mini pricing (as of 2024): $0.00015 per 1K prompt tokens, $0.0006 per 1K completion tokens
+  const inputCost = 0.00015 / 1000;
+  const outputCost = 0.0006 / 1000;
   
   // Rough estimate (would need actual input/output token split)
   const estimatedCost = (tokens * 0.7 * inputCost) + (tokens * 0.3 * outputCost);
-  return estimatedCost.toFixed(5);
+  return estimatedCost.toFixed(6);
 };
 
 // Enhanced OpenAI integration
