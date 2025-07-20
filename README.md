@@ -5,6 +5,7 @@ An AI-powered closet management and style recommendation app built with Next.js,
 ## Features
 
 - 👔 **Digital Closet**: Add and organize your clothing items with photos and tags
+- ✨ **AI Auto-Fill**: Automatically extract clothing details from images using AI vision
 - 🤖 **AI Style Assistant**: Get personalized outfit recommendations based on weather and your wardrobe
 - 🌤️ **Real Weather Integration**: Outfit suggestions based on current weather conditions
 - 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices
@@ -67,6 +68,7 @@ npm run dev
 
 ### Digital Closet
 - Photo upload and URL support
+- **AI Auto-Fill**: Paste an image URL and let AI extract clothing details
 - Tag-based organization
 - Advanced filtering (color, brand, size, price)
 - Category-based organization

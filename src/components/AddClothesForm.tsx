@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Upload, Plus, Image as ImageIcon, Link } from 'lucide-react';
+import { X, Upload, Plus, Image as ImageIcon, Link, Sparkles } from 'lucide-react';
 // @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { imageAnalysisService } from '../lib/imageAnalysisService';
 
 interface ClothingItem {
   id: string;
@@ -61,6 +62,10 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+
+  // Auto-fill state
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string>('');
 
   // User's existing brands state
   const [userBrands, setUserBrands] = useState<string[]>([]);
@@ -376,6 +381,54 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     } else {
       setImagePreview('');
     }
+    // Clear any previous analysis errors
+    setAnalysisError('');
+  };
+
+  // Auto-fill form using AI image analysis
+  const handleAutoFill = async () => {
+    if (!formData.imageUrl.trim()) {
+      setAnalysisError('Please enter an image URL first');
+      return;
+    }
+
+    if (!imageAnalysisService.hasValidApiKey()) {
+      setAnalysisError('OpenAI API key not configured. Auto-fill requires an OpenAI API key.');
+      return;
+    }
+
+    try {
+      setIsAnalyzing(true);
+      setAnalysisError('');
+      console.log('🧠 Starting auto-fill analysis...');
+
+      const analysis = await imageAnalysisService.analyzeClothingImage(formData.imageUrl);
+      console.log('✨ Auto-fill analysis result:', analysis);
+
+      // Update form data with analysis results
+      setFormData(prev => ({
+        ...prev,
+        name: analysis.name || prev.name,
+        category: analysis.category || prev.category,
+        brand: analysis.brand && analysis.brand !== 'Unknown' ? analysis.brand : prev.brand,
+        colors: analysis.colors.length > 0 ? analysis.colors : prev.colors,
+        tags: analysis.tags.length > 0 ? analysis.tags : prev.tags,
+        price: analysis.estimatedPrice ? analysis.estimatedPrice.split('-')[0] : prev.price // Use lower end of price range
+      }));
+
+      // Update brand input if brand was detected
+      if (analysis.brand && analysis.brand !== 'Unknown') {
+        setBrandInput(analysis.brand);
+      }
+
+      console.log('💰 Auto-fill cost:', analysis.cost, 'Tokens:', analysis.tokensUsed);
+      
+    } catch (error) {
+      console.error('❌ Auto-fill error:', error);
+      setAnalysisError(error instanceof Error ? error.message : 'Failed to analyze image. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   // Get tag style based on category
@@ -645,6 +698,10 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
       setImagePreview('');
       setDragActive(false);
       
+      // Clear auto-fill states
+      setIsAnalyzing(false);
+      setAnalysisError('');
+      
       // Call appropriate close callback
       if (isEditing && onCancel) {
         onCancel();
@@ -774,6 +831,44 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                     </div>
+
+                    {/* Auto-fill Button */}
+                    {formData.imageUrl.trim() && (
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={handleAutoFill}
+                          disabled={isAnalyzing}
+                          className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-purple-100 hover:bg-purple-200 disabled:bg-gray-100 text-purple-700 disabled:text-gray-400 rounded-lg font-medium transition-colors text-sm"
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                              Analyzing...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles size={16} />
+                              Auto-fill from image
+                            </>
+                          )}
+                        </button>
+                        
+                        {/* Error Message */}
+                        {analysisError && (
+                          <div className="text-xs text-red-600 bg-red-50 rounded-lg p-2">
+                            {analysisError}
+                          </div>
+                        )}
+                        
+                        {/* Success/Info Message */}
+                        {!analysisError && !isAnalyzing && imageAnalysisService.hasValidApiKey() && (
+                          <div className="text-xs text-purple-600 bg-purple-50 rounded-lg p-2">
+                            💡 AI will analyze your image and auto-fill details like name, category, colors, and tags
+                          </div>
+                        )}
+                      </div>
+                    )}
                     
                     {/* Image Preview for URL */}
                     {imagePreview && (
