@@ -385,6 +385,83 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     setAnalysisError('');
   };
 
+  // Map AI-generated tags to form's predefined tags
+  const mapAITagsToFormTags = (aiTags: string[]) => {
+    // Get all available form tags
+    const availableSeasonalTags = seasonalTags.map(tag => tag.name);
+    const availableOccasionTags = occasionTags.map(tag => tag.name);
+    const allAvailableTags = [...availableSeasonalTags, ...availableOccasionTags];
+    
+    const mappedTags: string[] = [];
+    
+    aiTags.forEach(aiTag => {
+      const normalizedAITag = aiTag.toLowerCase().trim();
+      
+      // Direct match (case-insensitive)
+      const directMatch = allAvailableTags.find(formTag => 
+        formTag.toLowerCase() === normalizedAITag
+      );
+      
+      if (directMatch) {
+        mappedTags.push(directMatch);
+        return;
+      }
+      
+      // Fuzzy matching for common variations
+      if (normalizedAITag.includes('athletic') || normalizedAITag.includes('sport') || normalizedAITag.includes('workout') || normalizedAITag.includes('exercise')) {
+        if (!mappedTags.includes('Gym')) mappedTags.push('Gym');
+      }
+      
+      if (normalizedAITag.includes('professional') || normalizedAITag.includes('office') || normalizedAITag.includes('business')) {
+        if (!mappedTags.includes('Business')) mappedTags.push('Business');
+        if (!mappedTags.includes('Work')) mappedTags.push('Work');
+      }
+      
+      if (normalizedAITag.includes('date') || normalizedAITag.includes('romantic') || normalizedAITag.includes('evening')) {
+        if (!mappedTags.includes('Date Night')) mappedTags.push('Date Night');
+      }
+      
+      if (normalizedAITag.includes('formal') || normalizedAITag.includes('dressy') || normalizedAITag.includes('elegant')) {
+        if (!mappedTags.includes('Formal')) mappedTags.push('Formal');
+      }
+      
+      if (normalizedAITag.includes('vacation') || normalizedAITag.includes('trip') || normalizedAITag.includes('travel')) {
+        if (!mappedTags.includes('Travel')) mappedTags.push('Travel');
+      }
+      
+      if (normalizedAITag.includes('party') || normalizedAITag.includes('celebration') || normalizedAITag.includes('event')) {
+        if (!mappedTags.includes('Party')) mappedTags.push('Party');
+      }
+      
+      if (normalizedAITag.includes('beach') || normalizedAITag.includes('swim') || normalizedAITag.includes('vacation')) {
+        if (!mappedTags.includes('Beach')) mappedTags.push('Beach');
+      }
+      
+      if (normalizedAITag.includes('weekend') || normalizedAITag.includes('leisure') || normalizedAITag.includes('relaxed')) {
+        if (!mappedTags.includes('Weekend')) mappedTags.push('Weekend');
+      }
+      
+      // Season mapping
+      if (normalizedAITag.includes('spring')) {
+        if (!mappedTags.includes('Spring')) mappedTags.push('Spring');
+      }
+      
+      if (normalizedAITag.includes('summer') || normalizedAITag.includes('warm') || normalizedAITag.includes('hot')) {
+        if (!mappedTags.includes('Summer')) mappedTags.push('Summer');
+      }
+      
+      if (normalizedAITag.includes('fall') || normalizedAITag.includes('autumn')) {
+        if (!mappedTags.includes('Fall')) mappedTags.push('Fall');
+      }
+      
+      if (normalizedAITag.includes('winter') || normalizedAITag.includes('cold') || normalizedAITag.includes('warm')) {
+        if (!mappedTags.includes('Winter')) mappedTags.push('Winter');
+      }
+    });
+    
+    return mappedTags;
+  };
+
   // Auto-fill form using AI image analysis
   const handleAutoFill = async () => {
     const imageUrl = formData.imageUrl.trim();
@@ -407,6 +484,10 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
       const analysis = await imageAnalysisService.analyzeClothingImage(imageUrl);
       console.log('✨ Auto-fill analysis result:', analysis);
 
+      // Map AI tags to form tags
+      const mappedTags = analysis.tags.length > 0 ? mapAITagsToFormTags(analysis.tags) : [];
+      console.log('🏷️ Mapped tags:', analysis.tags, '→', mappedTags);
+
       // Update form data with analysis results
       setFormData(prev => ({
         ...prev,
@@ -414,7 +495,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
         category: analysis.category || prev.category,
         brand: analysis.brand && analysis.brand !== 'Unknown' ? analysis.brand : prev.brand,
         colors: analysis.colors.length > 0 ? analysis.colors : prev.colors,
-        tags: analysis.tags.length > 0 ? analysis.tags : prev.tags
+        tags: mappedTags.length > 0 ? mappedTags : prev.tags
       }));
 
       // Update brand input if brand was detected
