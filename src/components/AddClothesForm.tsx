@@ -662,11 +662,22 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
 
   // Render the form content (shared between modal and sidebar modes)
   const formContent = (
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Upload/Link Tabs */}
               <div>
                 <div className="flex bg-gray-100 rounded-lg p-1 mb-3">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('link')}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                      activeTab === 'link' 
+                        ? 'bg-white text-gray-900 shadow-sm' 
+                        : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                  >
+                    Embed Link
+                  </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab('upload')}
@@ -678,17 +689,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                   >
                     Upload
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('link')}
-                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === 'link' 
-                        ? 'bg-white text-gray-900 shadow-sm' 
-                        : 'text-gray-500 hover:text-gray-900'
-                    }`}
-                  >
-                    Embed Link
-                  </button>
+                  
                 </div>
 
                 {/* Upload Tab Content */}
