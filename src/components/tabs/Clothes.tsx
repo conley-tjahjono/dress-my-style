@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Heart, MoreHorizontal, ShoppingCart, X, Edit, Trash2 } from 'lucide-react';
+import { Search, MoreHorizontal, ShoppingCart, X, Edit, Trash2 } from 'lucide-react';
 // @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -1262,10 +1262,6 @@ const Clothes = (): React.ReactElement => {
                   
                   {/* Action Buttons - Always on top */}
                   <div className="absolute top-3 right-3 flex gap-2">
-                    <button className="w-8 h-8 bg-white bg-opacity-90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all">
-                      <Heart size={16} className="text-gray-600" />
-                    </button>
-                    
                     {/* Dropdown Menu Container */}
                     <div className="relative dropdown-container">
                       <button 
