@@ -171,7 +171,9 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
   const categories = [
     'Choose Category',
     'Shirts', 
+    'Tank Tops',
     'Pants',
+    'Shorts',
     'Dresses',
     'Shoes',
     'Accessories',
@@ -252,7 +254,9 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
       case 'accessories':
         return ['Select Size', 'S', 'M', 'L'];
       case 'shirts':
+      case 'tank tops':
       case 'pants':
+      case 'shorts':
       case 'dresses':
       case 'jackets':
       case 'sweaters':

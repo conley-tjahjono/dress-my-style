@@ -34,7 +34,7 @@ export const imageAnalysisService = {
                   text: `Analyze this clothing item image and extract the following details in JSON format:
 {
   "name": "descriptive name of the item",
-  "category": "one of: Shirts, Pants, Dresses, Shoes, Accessories, Jackets, Sweaters",
+  "category": "one of: Shirts, Tank Tops, Pants, Shorts, Dresses, Shoes, Accessories, Jackets, Sweaters",
   "brand": "brand name if visible, or 'Unknown' if not visible",
   "colors": ["primary color", "secondary color if any"],
   "tags": ["style tags like Casual, Formal, Summer, etc."]
@@ -127,7 +127,7 @@ Be specific but concise. For colors, use common color names like Black, White, B
 
 // Helper function to validate category
 const validateCategory = (category) => {
-  const validCategories = ['Shirts', 'Pants', 'Dresses', 'Shoes', 'Accessories', 'Jackets', 'Sweaters'];
+  const validCategories = ['Shirts', 'Tank Tops', 'Pants', 'Shorts', 'Dresses', 'Shoes', 'Accessories', 'Jackets', 'Sweaters'];
   if (!category) return '';
   
   // Try exact match first
@@ -139,7 +139,9 @@ const validateCategory = (category) => {
   
   // Try fuzzy matching for common variations
   const categoryLower = category.toLowerCase();
+  if (categoryLower.includes('tank') || categoryLower.includes('camisole') || categoryLower.includes('sleeveless')) return 'Tank Tops';
   if (categoryLower.includes('shirt') || categoryLower.includes('top') || categoryLower.includes('blouse')) return 'Shirts';
+  if (categoryLower.includes('short') && (categoryLower.includes('pant') || categoryLower.includes('bottom'))) return 'Shorts';
   if (categoryLower.includes('pant') || categoryLower.includes('jeans') || categoryLower.includes('trouser')) return 'Pants';
   if (categoryLower.includes('dress') || categoryLower.includes('gown')) return 'Dresses';
   if (categoryLower.includes('shoe') || categoryLower.includes('sneaker') || categoryLower.includes('boot')) return 'Shoes';
