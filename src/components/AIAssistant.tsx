@@ -383,7 +383,7 @@ What can I help you with? 😊`,
                   <div className={`max-w-[280px] ${message.type === 'user' ? 'order-first' : ''}`}>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-medium text-gray-600">
-                        {message.type === 'user' ? 'You' : 'Orlando Diggs'}
+                        {message.type === 'user' ? 'You' : 'AI'}
                       </span>
                       <span className="text-xs text-gray-400">
                         {message.timestamp.toLocaleTimeString([], { 
