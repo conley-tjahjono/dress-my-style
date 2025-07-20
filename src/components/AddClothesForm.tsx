@@ -387,8 +387,10 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
 
   // Auto-fill form using AI image analysis
   const handleAutoFill = async () => {
-    if (!formData.imageUrl.trim()) {
-      setAnalysisError('Please enter an image URL first');
+    const imageUrl = formData.imageUrl.trim();
+    
+    if (!imageUrl) {
+      setAnalysisError('Please upload an image or enter an image URL first');
       return;
     }
 
@@ -400,9 +402,9 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     try {
       setIsAnalyzing(true);
       setAnalysisError('');
-      console.log('🧠 Starting auto-fill analysis...');
+      console.log('🧠 Starting auto-fill analysis for:', uploadedFile ? 'uploaded file' : 'URL');
 
-      const analysis = await imageAnalysisService.analyzeClothingImage(formData.imageUrl);
+      const analysis = await imageAnalysisService.analyzeClothingImage(imageUrl);
       console.log('✨ Auto-fill analysis result:', analysis);
 
       // Update form data with analysis results
@@ -773,24 +775,62 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                       
                       {imagePreview ? (
                         /* Image Preview */
-                        <div className="relative p-4">
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            className="w-full h-48 object-cover rounded-lg"
-                          />
-                          <button
-                            type="button"
-                            onClick={clearImage}
-                            className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                          >
-                            <X size={14} />
-                          </button>
-                          <div className="mt-2 text-center">
-                            <p className="text-sm text-gray-600">
-                              {uploadedFile ? `📁 ${uploadedFile.name}` : '🔗 Image from URL'}
-                            </p>
-                            <p className="text-xs text-gray-400">Click to change image</p>
+                        <div className="space-y-3">
+                          <div className="relative p-4">
+                            <img
+                              src={imagePreview}
+                              alt="Preview"
+                              className="w-full h-48 object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={clearImage}
+                              className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                            <div className="mt-2 text-center">
+                              <p className="text-sm text-gray-600">
+                                {uploadedFile ? `📁 ${uploadedFile.name}` : '🔗 Image from URL'}
+                              </p>
+                              <p className="text-xs text-gray-400">Click to change image</p>
+                            </div>
+                          </div>
+
+                          {/* Auto-fill Button for Upload */}
+                          <div className="flex flex-col gap-2">
+                            <button
+                              type="button"
+                              onClick={handleAutoFill}
+                              disabled={isAnalyzing}
+                              className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-purple-100 hover:bg-purple-200 disabled:bg-gray-100 text-purple-700 disabled:text-gray-400 rounded-lg font-medium transition-colors text-sm"
+                            >
+                              {isAnalyzing ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                                  Analyzing...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles size={16} />
+                                  Auto-fill from image
+                                </>
+                              )}
+                            </button>
+                            
+                            {/* Error Message */}
+                            {analysisError && (
+                              <div className="text-xs text-red-600 bg-red-50 rounded-lg p-2">
+                                {analysisError}
+                              </div>
+                            )}
+                            
+                            {/* Success/Info Message */}
+                            {!analysisError && !isAnalyzing && imageAnalysisService.hasValidApiKey() && (
+                              <div className="text-xs text-purple-600 bg-purple-50 rounded-lg p-2">
+                                💡 AI will analyze your {uploadedFile ? 'uploaded' : 'linked'} image and auto-fill details
+                              </div>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -832,7 +872,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                       />
                     </div>
 
-                    {/* Auto-fill Button */}
+                    {/* Auto-fill Button for URL */}
                     {formData.imageUrl.trim() && (
                       <div className="flex flex-col gap-2">
                         <button
@@ -864,7 +904,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                         {/* Success/Info Message */}
                         {!analysisError && !isAnalyzing && imageAnalysisService.hasValidApiKey() && (
                           <div className="text-xs text-purple-600 bg-purple-50 rounded-lg p-2">
-                            💡 AI will analyze your image and auto-fill details like name, category, colors, and tags
+                            💡 AI will analyze your {uploadedFile ? 'uploaded' : 'linked'} image and auto-fill details
                           </div>
                         )}
                       </div>
