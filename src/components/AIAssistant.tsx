@@ -98,6 +98,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
       const weather = await weatherService.getCurrentWeather();
       setCurrentWeather(weather);
       
+      // Check API status
+      const apiStatus = weatherService.getApiKeyStatus();
+      console.log('🔑 Weather API Status:', apiStatus);
+      
       // Send initial greeting with weather
       const greetingMessage: Message = {
         id: Date.now().toString(),
@@ -106,7 +110,11 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
 
 I can see it's ${weather.temperature}°F and ${weather.description} in ${weather.city}${weather.isDemo ? ' (demo data)' : ''}. 
 
-I'm here to help you pick the perfect outfit based on today's weather and your closet! Try asking me:
+${weather.isDemo ? `
+⚠️ **Using demo weather data**
+For real weather recommendations, get your free API key from OpenWeatherMap and add it to your .env.local file as NEXT_PUBLIC_OPENWEATHER_API_KEY
+
+` : ''}I'm here to help you pick the perfect outfit based on today's weather and your closet! Try asking me:
 
 • "What should I wear today?"
 • "Suggest something for work"
@@ -303,25 +311,45 @@ What can I help you with? 😊`,
 
             {/* Weather Display */}
             {currentWeather && (
-              <div className="flex items-center justify-between text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <MapPin size={16} />
-                  <span>{currentWeather.city}, {currentWeather.country}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Thermometer size={16} />
-                  <span>{currentWeather.temperature}°F / {Math.round((currentWeather.temperature - 32) * 5/9)}°C</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                    <Sun size={16} />
-                    <span>6:30 AM</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={16} />
+                    <span>{currentWeather.city}, {currentWeather.country}</span>
+                    {currentWeather.isDemo && (
+                      <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">Demo</span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Moon size={16} />
-                    <span>8:00 PM</span>
+                  <div className="flex items-center gap-2">
+                    <Thermometer size={16} />
+                    <span>{currentWeather.temperature}°F / {Math.round((currentWeather.temperature - 32) * 5/9)}°C</span>
                   </div>
                 </div>
+                
+                {!currentWeather.isDemo && currentWeather.sunrise && currentWeather.sunset && (
+                  <div className="flex items-center justify-between text-xs text-gray-500 bg-gray-50 rounded-lg p-2">
+                    <div className="flex items-center gap-1">
+                      <Sun size={14} />
+                      <span>{new Date(currentWeather.sunrise * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Moon size={14} />
+                      <span>{new Date(currentWeather.sunset * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      💧 <span>{currentWeather.humidity}%</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      🌬️ <span>{Math.round(currentWeather.windSpeed)} mph</span>
+                    </div>
+                  </div>
+                )}
+                
+                {currentWeather.isDemo && (
+                  <div className="text-xs text-orange-600 bg-orange-50 rounded-lg p-2">
+                    💡 Get real weather data: Add your OpenWeatherMap API key to .env.local
+                  </div>
+                )}
               </div>
             )}
           </div>

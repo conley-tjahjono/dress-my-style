@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dress My Style
 
-## Getting Started
+An AI-powered closet management and style recommendation app built with Next.js, Supabase, and OpenAI.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- 👔 **Digital Closet**: Add and organize your clothing items with photos and tags
+- 🤖 **AI Style Assistant**: Get personalized outfit recommendations based on weather and your wardrobe
+- 🌤️ **Real Weather Integration**: Outfit suggestions based on current weather conditions
+- 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices
+- 🔐 **User Authentication**: Secure user accounts with Supabase Auth
+
+## Setup Instructions
+
+### 1. Environment Variables
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```env
+# OpenWeatherMap API (for real weather data)
+NEXT_PUBLIC_OPENWEATHER_API_KEY=your_openweathermap_api_key_here
+
+# Supabase Configuration (already configured)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# OpenAI API (for AI recommendations)
+NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Getting Your OpenWeatherMap API Key
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Sign up** at [OpenWeatherMap](https://openweathermap.org/api)
+2. **Get your free API key** (1000 calls/day free tier)
+3. **Add it to your `.env.local` file** as `NEXT_PUBLIC_OPENWEATHER_API_KEY`
+4. **Restart your development server**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Note**: Without an API key, the app will use demo weather data. The AI Assistant will show a warning and instructions to set up real weather data.
 
-## Learn More
+### 3. Installation & Development
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Install dependencies
+npm install
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Run development server
+npm run dev
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Open http://localhost:3000
+```
 
-## Deploy on Vercel
+## Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Frontend**: Next.js 15, React, TailwindCSS
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **AI**: OpenAI GPT-4o mini
+- **Weather**: OpenWeatherMap API
+- **Icons**: Lucide React
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Features in Detail
+
+### AI Style Assistant
+- Analyzes current weather conditions
+- Recommends outfits from your wardrobe
+- Considers weather appropriateness
+- Suggests missing items if needed
+
+### Digital Closet
+- Photo upload and URL support
+- Tag-based organization
+- Advanced filtering (color, brand, size, price)
+- Category-based organization
+
+### Weather Integration
+- Real-time weather data
+- Location-based recommendations
+- Temperature and condition awareness
+- Sunrise/sunset times for outfit planning
