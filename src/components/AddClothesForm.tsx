@@ -414,8 +414,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
         category: analysis.category || prev.category,
         brand: analysis.brand && analysis.brand !== 'Unknown' ? analysis.brand : prev.brand,
         colors: analysis.colors.length > 0 ? analysis.colors : prev.colors,
-        tags: analysis.tags.length > 0 ? analysis.tags : prev.tags,
-        price: analysis.estimatedPrice ? analysis.estimatedPrice.split('-')[0] : prev.price // Use lower end of price range
+        tags: analysis.tags.length > 0 ? analysis.tags : prev.tags
       }));
 
       // Update brand input if brand was detected

@@ -37,8 +37,7 @@ export const imageAnalysisService = {
   "category": "one of: Shirts, Pants, Dresses, Shoes, Accessories, Jackets, Sweaters",
   "brand": "brand name if visible, or 'Unknown' if not visible",
   "colors": ["primary color", "secondary color if any"],
-  "tags": ["style tags like Casual, Formal, Summer, etc."],
-  "estimatedPrice": "estimated price range like '25-35' or null if can't estimate"
+  "tags": ["style tags like Casual, Formal, Summer, etc."]
 }
 
 Be specific but concise. For colors, use common color names like Black, White, Blue, Red, etc. For tags, include style, season, and occasion tags that would be relevant.`
@@ -98,8 +97,7 @@ Be specific but concise. For colors, use common color names like Black, White, B
           category: validateCategory(analysisResult.category) || '',
           brand: analysisResult.brand || '',
           colors: Array.isArray(analysisResult.colors) ? analysisResult.colors : [],
-          tags: Array.isArray(analysisResult.tags) ? analysisResult.tags : [],
-          estimatedPrice: analysisResult.estimatedPrice || ''
+          tags: Array.isArray(analysisResult.tags) ? analysisResult.tags : []
         };
 
         console.log('🎯 Normalized result:', normalizedResult);
