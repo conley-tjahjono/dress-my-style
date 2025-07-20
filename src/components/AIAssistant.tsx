@@ -305,7 +305,7 @@ What can I help you with? 😊`,
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-600 p-2 transition-colors"
               >
-                <X size={24} strokeWidth={2.5} />
+                <X size={20} />
               </button>
             </div>
 
@@ -314,28 +314,28 @@ What can I help you with? 😊`,
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
                   <div className="flex items-center gap-2">
-                    <MapPin size={16} strokeWidth={2.5} />
+                    <MapPin size={16} />
                     <span>{currentWeather.city}, {currentWeather.country}</span>
                     {currentWeather.isDemo && (
                       <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">Demo</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Thermometer size={16} strokeWidth={2.5} />
+                    <Thermometer size={16} />
                     <span>{currentWeather.temperature}°F / {Math.round((currentWeather.temperature - 32) * 5/9)}°C</span>
                   </div>
                 </div>
                 
                 {!currentWeather.isDemo && currentWeather.sunrise && currentWeather.sunset && (
                   <div className="flex items-center justify-between text-xs text-gray-500 bg-gray-50 rounded-lg p-2">
-                                         <div className="flex items-center gap-1">
-                       <Sun size={14} strokeWidth={2.5} />
-                       <span>{new Date(currentWeather.sunrise * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                     </div>
-                     <div className="flex items-center gap-1">
-                       <Moon size={14} strokeWidth={2.5} />
-                       <span>{new Date(currentWeather.sunset * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                     </div>
+                    <div className="flex items-center gap-1">
+                      <Sun size={14} />
+                      <span>{new Date(currentWeather.sunrise * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Moon size={14} />
+                      <span>{new Date(currentWeather.sunset * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
                     <div className="flex items-center gap-1">
                       💧 <span>{currentWeather.humidity}%</span>
                     </div>
@@ -359,7 +359,7 @@ What can I help you with? 😊`,
             {messages.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Zap size={24} strokeWidth={2.5} className="text-purple-600" />
+                  <Zap size={24} className="text-purple-600" />
                 </div>
                 <p className="text-lg font-medium mb-2">Hi! I'm your AI stylist</p>
                 {userClothes.length === 0 ? (
@@ -420,7 +420,7 @@ What can I help you with? 😊`,
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
-                                    <ImageIcon size={20} strokeWidth={2.5} className="text-gray-400" />
+                                    <ImageIcon size={20} className="text-gray-400" />
                                   </div>
                                 )}
                               </div>
@@ -514,7 +514,7 @@ What can I help you with? 😊`,
                 disabled={isLoading || !inputMessage.trim()}
                 className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white rounded-lg p-3 transition-colors"
               >
-                <Send size={16} strokeWidth={2.5} />
+                <Send size={16} />
               </button>
             </div>
           </div>
