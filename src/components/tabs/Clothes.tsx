@@ -200,12 +200,15 @@ const Clothes = (): React.ReactElement => {
         setLoadingTimeout(null);
       };
     } else {
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-        setLoadingTimeout(null);
-      }
+      // Clear timeout when not loading
+      setLoadingTimeout(prev => {
+        if (prev) {
+          clearTimeout(prev);
+        }
+        return null;
+      });
     }
-  }, [authLoading, isLoading, loadingTimeout]);
+  }, [authLoading, isLoading]); // Removed loadingTimeout from dependencies
 
   // Get unique categories from clothing items
   const categories = useMemo(() => {
