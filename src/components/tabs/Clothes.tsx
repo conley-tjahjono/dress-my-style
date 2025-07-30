@@ -118,7 +118,7 @@ const Clothes = (): React.ReactElement => {
           .from('clothes')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false }).limit(1000);
+          .order('created_at', { ascending: false });
 
         console.log('📡 Executing Supabase query for user:', user.id);
         const result = await Promise.race([queryPromise, timeoutPromise]);
