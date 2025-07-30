@@ -118,7 +118,7 @@ const Clothes = (): React.ReactElement => {
           .from('clothes')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }).limit(1000);
 
         console.log('📡 Executing Supabase query for user:', user.id);
         const result = await Promise.race([queryPromise, timeoutPromise]);
@@ -219,6 +219,7 @@ const Clothes = (): React.ReactElement => {
   // Filter clothing items based on search term, category, and APPLIED filters
   const filteredItems = useMemo(() => {
     let items = clothingItems;
+    console.log('clothingItems', clothingItems)
 
     // Filter by search term
     if (searchTerm.trim()) {
@@ -423,6 +424,7 @@ const Clothes = (): React.ReactElement => {
   };
 
   const toggleBrand = (brand: string) => {
+    console.log('toggleBrand', brand)
     setSelectedBrands(prev => 
       prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]
     );
