@@ -48,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
     
-    // Get initial session
+    // Get initial session (FAST - no database calls)
     const getSession = async () => {
       try {
         console.log('🔄 Getting initial session...');
@@ -60,42 +60,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           console.log('👤 User found in session:', session.user.email);
           
-          // Get user profile from our custom users table
-          const { data: profile, error: profileError } = await typedSupabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          console.log('📝 Profile fetch result:', { profile, profileError });
-
-          // If profile doesn't exist, create it
-          if (profileError && profileError.code === 'PGRST116') {
-            console.log('🆕 Creating missing user profile...');
-            const { error: insertError } = await typedSupabase
-              .from('users')
-              .insert([{
-                id: session.user.id,
-                email: session.user.email,
-                full_name: session.user.user_metadata?.full_name || 'User'
-              }]);
-
-            if (insertError) {
-              console.error('❌ Failed to create user profile:', insertError);
-            } else {
-              console.log('✅ User profile created successfully');
-            }
-          }
-
+          // Set user immediately with basic info (FAST)
           if (mounted) {
             setUser({
               id: session.user.id,
               email: session.user.email || '',
-              full_name: profile?.full_name || session.user.user_metadata?.full_name || 'User',
-              avatar_url: profile?.avatar_url
+              full_name: session.user.user_metadata?.full_name || 'User',
+              avatar_url: undefined // Will be loaded separately
             });
-            console.log('✅ User set in context');
+            console.log('✅ User set in context (basic info)');
           }
+          
+          // Load profile in background (ASYNC - doesn't block UI)
+          loadUserProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name);
         } else {
           console.log('🚫 No user in session');
           if (mounted) {
@@ -109,9 +86,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } finally {
         if (mounted) {
-          setLoading(false);
+          setLoading(false); // This happens FAST now
           console.log('🏁 Initial session loading complete');
         }
+      }
+    };
+
+    // Separate function to load profile (doesn't block initial load)
+    const loadUserProfile = async (userId: string, email: string | undefined, fullName: string | undefined) => {
+      try {
+        console.log('📝 Loading user profile in background...');
+        const { data: profile, error: profileError } = await typedSupabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        // If profile doesn't exist, create it
+        if (profileError && profileError.code === 'PGRST116') {
+          console.log('🆕 Creating missing user profile...');
+          const { error: insertError } = await typedSupabase
+            .from('users')
+            .insert([{
+              id: userId,
+              email: email,
+              full_name: fullName || 'User'
+            }]);
+
+          if (insertError) {
+            console.error('❌ Failed to create user profile:', insertError);
+          } else {
+            console.log('✅ User profile created successfully');
+          }
+        } else if (profile && mounted) {
+          // Update user with full profile info
+          setUser(prev => prev ? {
+            ...prev,
+            full_name: profile.full_name || prev.full_name,
+            avatar_url: profile.avatar_url
+          } : null);
+          console.log('✅ User profile loaded and updated');
+        }
+      } catch (error) {
+        console.error('❌ Error loading user profile:', error);
       }
     };
 
