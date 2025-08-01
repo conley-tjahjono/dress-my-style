@@ -1,12 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-// @ts-expect-error - Supabase client type issue in demo mode
-import { supabase } from '../lib/supabase';
-import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-
-// @ts-expect-error - Suppress all supabase type issues
-const typedSupabase = supabase as any;
+import { useServerAuth } from '../hooks/useServerAuth';
 
 interface User {
   id: string;
@@ -35,288 +30,162 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
   
-  // Session timeout settings (30 minutes of inactivity)
-  const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
-  const WARNING_TIME = 5 * 60 * 1000; // 5 minutes warning before logout
-  const [lastActivity, setLastActivity] = useState<number>(Date.now());
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState<boolean>(false);
+  // Use server-side authentication
+  const { 
+    getServerSession, 
+    serverSignIn, 
+    serverSignUp, 
+    serverSignOut,
+    loading: serverLoading 
+  } = useServerAuth();
+
+  // Session timeout handling (keeping this for compatibility)
+  const WARNING_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
+  const extendSession = () => {
+    console.log('🔄 Session extended by user interaction');
+    setShowTimeoutWarning(false);
+  };
 
   useEffect(() => {
     let mounted = true;
     
-    // Get initial session (FAST - no database calls)
-    const getSession = async () => {
+    // Get initial session from server
+    const loadServerSession = async () => {
       try {
-        console.log('🔄 Getting initial session...');
-        const { data: { session } } = await typedSupabase.auth.getSession();
-        console.log('📋 Session data:', session ? 'Session exists' : 'No session');
+        console.log('🔄 Loading server session...');
+        const sessionData = await getServerSession();
         
         if (!mounted) return;
         
-        if (session?.user) {
-          console.log('👤 User found in session:', session.user.email);
-          
-          // Set user immediately with basic info (FAST)
-          if (mounted) {
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              full_name: session.user.user_metadata?.full_name || 'User',
-              avatar_url: undefined // Will be loaded separately
-            });
-            console.log('✅ User set in context (basic info)');
-          }
-          
-          // Load profile in background (ASYNC - doesn't block UI)
-          loadUserProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name);
+        if (sessionData?.user) {
+          console.log('👤 Server session found:', sessionData.user.email);
+          setUser({
+            id: sessionData.user.id,
+            email: sessionData.user.email || '',
+            full_name: sessionData.user.user_metadata?.full_name || 'User',
+            avatar_url: sessionData.user.user_metadata?.avatar_url
+          });
         } else {
-          console.log('🚫 No user in session');
-          if (mounted) {
-            setUser(null);
-          }
+          console.log('🚫 No server session found');
+          setUser(null);
         }
       } catch (error) {
-        console.error('❌ Error getting session:', error);
+        console.error('❌ Error loading server session:', error);
         if (mounted) {
           setUser(null);
         }
       } finally {
         if (mounted) {
-          setLoading(false); // This happens FAST now
-          console.log('🏁 Initial session loading complete');
-        }
-      }
-    };
-
-    // Separate function to load profile (doesn't block initial load)
-    const loadUserProfile = async (userId: string, email: string | undefined, fullName: string | undefined) => {
-      try {
-        console.log('📝 Loading user profile in background...');
-        const { data: profile, error: profileError } = await typedSupabase
-          .from('users')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        // If profile doesn't exist, create it
-        if (profileError && profileError.code === 'PGRST116') {
-          console.log('🆕 Creating missing user profile...');
-          const { error: insertError } = await typedSupabase
-            .from('users')
-            .insert([{
-              id: userId,
-              email: email,
-              full_name: fullName || 'User'
-            }]);
-
-          if (insertError) {
-            console.error('❌ Failed to create user profile:', insertError);
-          } else {
-            console.log('✅ User profile created successfully');
-          }
-        } else if (profile && mounted) {
-          // Update user with full profile info
-          setUser(prev => prev ? {
-            ...prev,
-            full_name: profile.full_name || prev.full_name,
-            avatar_url: profile.avatar_url
-          } : null);
-          console.log('✅ User profile loaded and updated');
-        }
-      } catch (error) {
-        console.error('❌ Error loading user profile:', error);
-      }
-    };
-
-    getSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = typedSupabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        console.log('🔐 Auth state changed:', event, 'mounted:', mounted);
-        
-        if (!mounted) return;
-        
-        if (session?.user) {
-          console.log('👤 User in auth change:', session.user.email);
-          
-          // Get user profile from our custom users table
-          const { data: profile, error: profileError } = await typedSupabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          console.log('📝 Profile in auth change:', { profile, profileError });
-
-          // If profile doesn't exist, create it
-          if (profileError && profileError.code === 'PGRST116') {
-            console.log('🆕 Creating user profile in auth change...');
-            const { error: insertError } = await typedSupabase
-              .from('users')
-              .insert([{
-                id: session.user.id,
-                email: session.user.email,
-                full_name: session.user.user_metadata?.full_name || 'User'
-              }]);
-
-            if (insertError) {
-              console.error('❌ Failed to create user profile in auth change:', insertError);
-            } else {
-              console.log('✅ User profile created in auth change');
-            }
-          }
-
-          if (mounted) {
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              full_name: profile?.full_name || session.user.user_metadata?.full_name || 'User',
-              avatar_url: profile?.avatar_url
-            });
-            console.log('✅ User updated in auth change');
-          }
-        } else {
-          console.log('🚫 No user in auth change, setting to null');
-          if (mounted) {
-            setUser(null);
-          }
-        }
-        
-        // Only set loading to false after we've handled the auth change
-        if (mounted) {
           setLoading(false);
-          console.log('🏁 Auth change loading complete');
+          console.log('🏁 Server session loading complete');
         }
       }
-    );
+    };
+
+    loadServerSession();
+
+    // Set up session timeout warning (keeping for compatibility)
+    const warningTimer = setTimeout(() => {
+      if (mounted && user) {
+        setShowTimeoutWarning(true);
+        console.log('⚠️ Session timeout warning shown');
+      }
+    }, WARNING_TIME);
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      clearTimeout(warningTimer);
     };
-  }, []);
+  }, [getServerSession, user, WARNING_TIME]);
 
-  // Track user activity and auto-logout on inactivity
-  useEffect(() => {
-    if (!user) return;
-
-    // Activity tracking function
-    const updateActivity = () => {
-      setLastActivity(Date.now());
-      setShowTimeoutWarning(false); // Reset warning on activity
-      console.log('🔄 User activity detected, updating last activity time');
-    };
-
-    // Events that indicate user activity
-    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-
-    // Add event listeners
-    activityEvents.forEach(event => {
-      document.addEventListener(event, updateActivity, true);
-    });
-
-    // Check for inactivity every minute
-    const checkInactivity = setInterval(() => {
-      const now = Date.now();
-      const timeSinceLastActivity = now - lastActivity;
-      
-      console.log('⏰ Checking user activity - Time since last activity:', Math.round(timeSinceLastActivity / 1000 / 60), 'minutes');
-      
-      // Show warning 5 minutes before logout
-      if (timeSinceLastActivity > (SESSION_TIMEOUT - WARNING_TIME) && !showTimeoutWarning) {
-        console.log('⚠️ Showing session timeout warning');
-        setShowTimeoutWarning(true);
-      }
-      
-      // Logout user after timeout
-      if (timeSinceLastActivity > SESSION_TIMEOUT) {
-        console.log('🚪 Session expired due to inactivity, logging out user');
-        signOut();
-      }
-    }, 60000); // Check every minute
-
-    // Cleanup
-    return () => {
-      activityEvents.forEach(event => {
-        document.removeEventListener(event, updateActivity, true);
-      });
-      clearInterval(checkInactivity);
-    };
-  }, [user, lastActivity, SESSION_TIMEOUT]);
-
+  // Server-side sign up
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      console.log('📝 Starting signup process...');
-      const { data, error } = await typedSupabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      console.log('✅ Supabase auth signup successful');
+      console.log('🔐 Starting server-side signup...');
+      const result = await serverSignUp(email, password, fullName);
       
-      // Note: User profile will be created automatically when the auth state changes
-      // or when the user confirms their email (if email confirmation is enabled)
+      if (result.error) {
+        console.error('❌ Server signup failed:', result.error);
+        return { error: result.error };
+      }
 
-      return { error: null };
+      console.log('✅ Server signup successful');
+      
+      // If user is immediately logged in (no email confirmation)
+      if (result.session && result.user) {
+        setUser({
+          id: result.user.id,
+          email: result.user.email,
+          full_name: result.user.full_name || fullName,
+          avatar_url: result.user.avatar_url
+        });
+      }
+
+      return { message: result.message };
     } catch (error) {
-      console.error('❌ Signup error:', error);
-      return { error };
+      console.error('💥 Unexpected signup error:', error);
+      return { error: 'An unexpected error occurred. Please try again.' };
     }
   };
 
+  // Server-side sign in
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await typedSupabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      console.log('🔐 Starting server-side signin...');
+      const result = await serverSignIn(email, password);
+      
+      if (result.error) {
+        console.error('❌ Server signin failed:', result.error);
+        return { error: result.error };
+      }
 
-      if (error) throw error;
+      console.log('✅ Server signin successful');
+      
+      if (result.user) {
+        setUser({
+          id: result.user.id,
+          email: result.user.email,
+          full_name: result.user.full_name || 'User',
+          avatar_url: result.user.avatar_url
+        });
+      }
 
-      return { error: null };
+      return {};
     } catch (error) {
-      console.error('Signin error:', error);
-      return { error };
+      console.error('💥 Unexpected signin error:', error);
+      return { error: 'An unexpected error occurred. Please try again.' };
     }
   };
 
+  // Server-side sign out
   const signOut = async () => {
     try {
-      const { error } = await typedSupabase.auth.signOut();
-      if (error) throw error;
+      console.log('🔐 Starting server-side signout...');
+      await serverSignOut();
       setUser(null);
       setShowTimeoutWarning(false);
+      console.log('✅ Server signout successful');
     } catch (error) {
-      console.error('Signout error:', error);
+      console.error('❌ Server signout error:', error);
+      // Still clear local state even if server signout fails
+      setUser(null);
+      setShowTimeoutWarning(false);
     }
   };
 
-  const extendSession = () => {
-    console.log('🔄 Session extended by user action');
-    setLastActivity(Date.now());
-    setShowTimeoutWarning(false);
-  };
-
-  const value: AuthContextType = {
+  const value = {
     user,
-    loading,
+    loading: loading || serverLoading,
     showTimeoutWarning,
     extendSession,
     signUp,
     signIn,
-    signOut
+    signOut,
   };
 
   return (
@@ -324,4 +193,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-}; 
+} 

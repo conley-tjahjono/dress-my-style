@@ -194,9 +194,75 @@ export function useServerAuth() {
     }
   };
 
+  // 🔐 Sign in via server API
+  const serverSignIn = async (email, password) => {
+    setLoading(true);
+    try {
+      console.log('🔐 Signing in via server API...');
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Server signin error:', data.error);
+        return { error: data.error };
+      }
+
+      console.log('✅ Server signin successful');
+      return { user: data.user, session: data.session };
+    } catch (error) {
+      console.error('❌ Error signing in via server:', error);
+      return { error: 'Network error. Please try again.' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔐 Sign up via server API
+  const serverSignUp = async (email, password, fullName) => {
+    setLoading(true);
+    try {
+      console.log('🔐 Signing up via server API...');
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, fullName }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Server signup error:', data.error);
+        return { error: data.error };
+      }
+
+      console.log('✅ Server signup successful');
+      return { 
+        user: data.user, 
+        session: data.session, 
+        message: data.message 
+      };
+    } catch (error) {
+      console.error('❌ Error signing up via server:', error);
+      return { error: 'Network error. Please try again.' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     getServerSession,
+    serverSignIn,
+    serverSignUp,
     serverSignOut,
     getServerProfile,
     updateServerProfile,
