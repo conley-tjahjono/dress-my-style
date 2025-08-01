@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 // Get environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -39,15 +39,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
     }
   };
 } else {
-  // Create real Supabase client
+  // Create real Supabase browser client for SSR compatibility
   try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true
-      }
-    });
-    console.log('🚀 Supabase client initialized successfully!');
+    supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+    console.log('🚀 Supabase browser client initialized successfully!');
   } catch (error) {
     console.error('❌ Failed to create Supabase client:', error);
     throw error;
