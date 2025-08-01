@@ -3,6 +3,7 @@ import { Search, MoreHorizontal, ShoppingCart, X, Edit, Trash2 } from 'lucide-re
 // @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useServerAuth } from '../../hooks/useServerAuth';
 import AddClothesForm from '../AddClothesForm';
 
 // Debug function to test Supabase connection
@@ -38,6 +39,7 @@ interface ClothingItem {
 
 const Clothes = (): React.ReactElement => {
   const { user, loading: authLoading } = useAuth();
+  const { deleteServerClothing } = useServerAuth();
   
   // Current filter selections (not yet applied)
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -608,24 +610,19 @@ const Clothes = (): React.ReactElement => {
     }
 
     try {
-      console.log('🗑️ Deleting item:', item);
+      console.log('🗑️ Deleting item via server API:', item);
       
-      // @ts-expect-error - Supabase client type issue in demo mode
-      const { error } = await supabase
-        .from('clothes')
-        .delete()
-        .eq('id', item.id)
-        .eq('user_id', user?.id);
+      const result = await deleteServerClothing(item.id);
 
-      if (error) {
-        console.error('❌ Error deleting item:', error);
+      if (result.error) {
+        console.error('❌ Error deleting item:', result.error);
         alert('Failed to delete item. Please try again.');
         return;
       }
 
       // Remove from local state
       setClothingItems(prev => prev.filter(i => i.id !== item.id));
-      console.log('✅ Item deleted successfully');
+      console.log('✅ Item deleted successfully via server API');
       
     } catch (error) {
       console.error('💥 Unexpected error deleting item:', error);

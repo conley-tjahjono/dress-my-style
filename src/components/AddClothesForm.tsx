@@ -5,6 +5,7 @@ import { X, Upload, Plus, Image as ImageIcon, Link, Sparkles } from 'lucide-reac
 // @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useServerAuth } from '../hooks/useServerAuth';
 import { imageAnalysisService } from '../lib/imageAnalysisService';
 
 interface ClothingItem {
@@ -43,6 +44,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'upload' | 'link'>('link');
   const { user } = useAuth();
+  const { addServerClothing, updateServerClothing } = useServerAuth();
   const [formData, setFormData] = useState({
     name: '',
     category: '',

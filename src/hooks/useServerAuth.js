@@ -144,6 +144,56 @@ export function useServerAuth() {
     }
   };
 
+  // 📝 Update clothing item via protected API
+  const updateServerClothing = async (clothingData) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/protected/clothes', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(clothingData),
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update clothing');
+      }
+      
+      console.log('✅ Server clothing updated:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Error updating server clothing:', error);
+      return { error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🗑️ Delete clothing item via protected API
+  const deleteServerClothing = async (clothingId) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/protected/clothes?id=${clothingId}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete clothing');
+      }
+      
+      console.log('✅ Server clothing deleted:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Error deleting server clothing:', error);
+      return { error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     getServerSession,
@@ -151,6 +201,8 @@ export function useServerAuth() {
     getServerProfile,
     updateServerProfile,
     getServerClothes,
-    addServerClothing
+    addServerClothing,
+    updateServerClothing,
+    deleteServerClothing
   };
 } 
