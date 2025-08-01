@@ -548,6 +548,30 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     }, 100);
   };
 
+  // Helper function to save clothes via server API
+  const saveClothesViaAPI = async (clothesData: any, isEditing: boolean, editingItemId?: string) => {
+    try {
+      let result;
+      if (isEditing && editingItemId) {
+        console.log('🔄 Updating via server API...');
+        const updateData = { ...clothesData, id: editingItemId };
+        result = await updateServerClothing(updateData);
+      } else {
+        console.log('➕ Creating via server API...');
+        result = await addServerClothing(clothesData);
+      }
+
+      if (result.error) {
+        throw new Error(result.error.message || 'Unknown server error');
+      }
+
+      return { data: [result.clothing], error: null };
+    } catch (error) {
+      console.error('❌ Server API error:', error);
+      return { data: null, error };
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -675,40 +699,13 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
       console.log('✅ User exists in database');
       
       try {
-        // Add timeout to prevent hanging
-        let dbPromise;
-        if (isEditing && editingItem) {
-          console.log('🔄 Updating existing item with ID:', editingItem.id);
-          // @ts-expect-error - Supabase client type issue in demo mode
-          dbPromise = supabase
-            .from('clothes')
-            .update(clothesData)
-            .eq('id', editingItem.id)
-            .select();
-        } else {
-          console.log('➕ Creating new item');
-          // @ts-expect-error - Supabase client type issue in demo mode
-          dbPromise = supabase
-            .from('clothes')
-            .insert([clothesData])
-            .select();
-        }
-        
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database operation timed out')), 10000)
-        );
-        
-        const result = await Promise.race([dbPromise, timeoutPromise]);
-        
-        console.log('📤 Supabase result:', result);
-        const { data, error } = result;
+        // Use server API instead of direct Supabase calls
+        const { data, error } = await saveClothesViaAPI(clothesData, isEditing, editingItem?.id);
 
         if (error) {
-          console.error('❌ Supabase error details:', error);
-          console.error('❌ Error code:', error.code);
-          console.error('❌ Error message:', error.message);
-          console.error('❌ Error details:', error.details);
-          alert('Error saving clothes: ' + error.message);
+          console.error('❌ Error saving clothes:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          alert('Error saving clothes: ' + errorMessage);
           return;
         }
 
