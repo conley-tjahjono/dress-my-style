@@ -51,10 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setShowTimeoutWarning(false);
   };
 
+  // Load initial session (runs once on mount)
   useEffect(() => {
     let mounted = true;
     
-    // Get initial session from server
     const loadServerSession = async () => {
       try {
         console.log('🔄 Loading server session...');
@@ -89,19 +89,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     loadServerSession();
 
-    // Set up session timeout warning (keeping for compatibility)
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty - only run once on mount, getServerSession is stable
+
+  // Session timeout warning (separate effect for user-dependent logic)
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('⚠️ Setting up session timeout warning for user:', user.email);
     const warningTimer = setTimeout(() => {
-      if (mounted && user) {
-        setShowTimeoutWarning(true);
-        console.log('⚠️ Session timeout warning shown');
-      }
+      setShowTimeoutWarning(true);
+      console.log('⚠️ Session timeout warning shown');
     }, WARNING_TIME);
 
     return () => {
-      mounted = false;
       clearTimeout(warningTimer);
     };
-  }, [getServerSession, user, WARNING_TIME]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only user.id needed, WARNING_TIME is constant
 
   // Server-side sign up
   const signUp = async (email: string, password: string, fullName: string) => {
