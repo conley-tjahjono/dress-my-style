@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 // 👕 GET /api/protected/clothes - Get user's clothing items (protected)
 export async function GET() {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
@@ -48,7 +48,7 @@ export async function GET() {
 // 📝 POST /api/protected/clothes - Add new clothing item (protected)
 export async function POST(request) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
@@ -106,7 +106,7 @@ export async function POST(request) {
 // 📝 PUT /api/protected/clothes - Update clothing item (protected)
 export async function PUT(request) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
@@ -173,7 +173,7 @@ export async function PUT(request) {
 // 🗑️ DELETE /api/protected/clothes - Delete clothing item (protected)
 export async function DELETE(request) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {

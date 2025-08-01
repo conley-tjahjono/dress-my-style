@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 // 🚪 POST /api/auth/signout - Sign out user server-side
 export async function POST() {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { error } = await supabase.auth.signOut()
 
     if (error) {

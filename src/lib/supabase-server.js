@@ -5,8 +5,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 // 🚀 Server-side Supabase client for authentication
-export function createServerSupabaseClient() {
-  const cookieStore = cookies()
+export async function createServerSupabaseClient() {
+  const cookieStore = await cookies()
 
   // Check if we're in development and variables are missing
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -57,7 +57,7 @@ export function createServerSupabaseClient() {
 
 // 🔐 Helper function to get server session
 export async function getServerSession() {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   
   try {
     const { data: { session }, error } = await supabase.auth.getSession()
@@ -76,7 +76,7 @@ export async function getServerSession() {
 
 // 👤 Helper function to get server user
 export async function getServerUser() {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   
   try {
     const { data: { user }, error } = await supabase.auth.getUser()

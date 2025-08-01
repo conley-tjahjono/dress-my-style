@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 // 🔐 GET /api/auth/session - Get current session
 export async function GET() {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { data: { session }, error } = await supabase.auth.getSession()
 
     if (error) {

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 // 👤 GET /api/protected/profile - Get user profile (protected)
 export async function GET() {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
@@ -53,7 +53,7 @@ export async function GET() {
 // 📝 PUT /api/protected/profile - Update user profile (protected)
 export async function PUT(request) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
