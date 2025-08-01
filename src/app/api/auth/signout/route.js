@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '../../../lib/supabase-server'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 
 // 🚪 POST /api/auth/signout - Sign out user server-side

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '../../../lib/supabase-server'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 
 // 👕 GET /api/protected/clothes - Get user's clothing items (protected)
