@@ -243,6 +243,8 @@ const Clothes = (): React.ReactElement => {
 
     // Apply sidebar filters only if they have been applied
     items = items.filter(item => {
+
+      console.log('item', item)
       // Tag filter
       if (appliedTags.length > 0) {
         const hasMatchingTag = item.tags.some(tag => appliedTags.includes(tag));
@@ -269,23 +271,33 @@ const Clothes = (): React.ReactElement => {
       }
 
       // Size filters - check different size types based on category
-      if (appliedSizes.length > 0) {
+      // If any size filters are applied, we need to determine which categories to show
+      const hasGarmentSizes = appliedSizes.length > 0;
+      const hasAccessorySizes = appliedAccessorySizes.length > 0;
+      const hasShoeSizes = appliedShoeSizes.length > 0;
+      
+      // If ANY size filter is applied, only show items from those specific categories
+      if (hasGarmentSizes || hasAccessorySizes || hasShoeSizes) {
+        const itemCategory = item.category.toLowerCase();
         const garmentCategories = ['shirts', 'pants', 'dresses', 'jackets', 'sweaters'];
-        if (garmentCategories.includes(item.category.toLowerCase())) {
-          if (!appliedSizes.includes(item.size || '')) return false;
+        
+        let shouldShowItem = false;
+        
+        // Check if item belongs to a category with active size filters
+        if (hasGarmentSizes && garmentCategories.includes(itemCategory)) {
+          shouldShowItem = appliedSizes.includes(item.size || '');
         }
-      }
-
-      if (appliedAccessorySizes.length > 0) {
-        if (item.category.toLowerCase() === 'accessories') {
-          if (!appliedAccessorySizes.includes(item.size || '')) return false;
+        
+        if (hasAccessorySizes && itemCategory === 'accessories') {
+          shouldShowItem = appliedAccessorySizes.includes(item.size || '');
         }
-      }
-
-      if (appliedShoeSizes.length > 0) {
-        if (item.category.toLowerCase() === 'shoes') {
-          if (!appliedShoeSizes.includes(item.size || '')) return false;
+        
+        if (hasShoeSizes && itemCategory === 'shoes') {
+          shouldShowItem = appliedShoeSizes.includes(item.size || '');
         }
+        
+        // If item doesn't match any active size filter categories, exclude it
+        if (!shouldShowItem) return false;
       }
 
       // Price filter
@@ -384,6 +396,7 @@ const Clothes = (): React.ReactElement => {
   };
 
   const handleApplyFilters = () => {
+    console.log('selectedAccessorySizes', selectedAccessorySizes)
     setAppliedTags([...selectedTags]);
     setAppliedBrands([...selectedBrands]);
     setAppliedSizes([...selectedSizes]);
