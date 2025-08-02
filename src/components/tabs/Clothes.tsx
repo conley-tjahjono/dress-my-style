@@ -244,7 +244,6 @@ const Clothes = (): React.ReactElement => {
     // Apply sidebar filters only if they have been applied
     items = items.filter(item => {
 
-      console.log('item', item)
       // Tag filter
       if (appliedTags.length > 0) {
         const hasMatchingTag = item.tags.some(tag => appliedTags.includes(tag));
@@ -357,6 +356,7 @@ const Clothes = (): React.ReactElement => {
   }, [searchTerm, selectedCategory, appliedTags, appliedBrands, appliedSizes, appliedAccessorySizes, appliedShoeSizes, appliedColors, appliedPriceRange]);
 
   const removeKeyword = (keyword: string) => {
+    console.log('removeKeyword', keyword)
     // Remove from appropriate APPLIED filter based on keyword type
     if (keyword.startsWith('Search: "')) {
       setSearchTerm('');
@@ -384,10 +384,10 @@ const Clothes = (): React.ReactElement => {
       setAppliedPriceRange([0, 100]);
       setPriceRange([0, 100]);
     } else {
-      // Handle color keywords
-      const colorName = keyword.toLowerCase();
-      setAppliedColors(prev => prev.filter(c => c !== colorName));
-      setSelectedColors(prev => prev.filter(c => c !== colorName));
+      // Handle color keywords - use case-insensitive comparison
+      console.log('🎨 Removing color keyword:', keyword);
+      setAppliedColors(prev => prev.filter(c => c.toLowerCase() !== keyword.toLowerCase()));
+      setSelectedColors(prev => prev.filter(c => c.toLowerCase() !== keyword.toLowerCase()));
     }
   };
 
@@ -396,7 +396,6 @@ const Clothes = (): React.ReactElement => {
   };
 
   const handleApplyFilters = () => {
-    console.log('selectedAccessorySizes', selectedAccessorySizes)
     setAppliedTags([...selectedTags]);
     setAppliedBrands([...selectedBrands]);
     setAppliedSizes([...selectedSizes]);
@@ -439,7 +438,6 @@ const Clothes = (): React.ReactElement => {
   };
 
   const toggleBrand = (brand: string) => {
-    console.log('toggleBrand', brand)
     setSelectedBrands(prev => 
       prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]
     );
