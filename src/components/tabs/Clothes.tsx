@@ -461,36 +461,77 @@ const Clothes = (): React.ReactElement => {
     );
   };
 
-    // Color list matching AddClothesForm (including jewelry colors)
-  const allColors = [
-    // Base clothing colors
-    { name: 'Black', hex: '#000000' },
-    { name: 'White', hex: '#FFFFFF' },
-    { name: 'Gray', hex: '#6B7280' },
-    { name: 'Navy', hex: '#1E3A8A' },
-    { name: 'Blue', hex: '#3B82F6' },
-    { name: 'Red', hex: '#EF4444' },
-    { name: 'Green', hex: '#10B981' },
-    { name: 'Brown', hex: '#A16207' },
-    { name: 'Beige', hex: '#D6D3D1' },
-    { name: 'Pink', hex: '#EC4899' },
-    { name: 'Purple', hex: '#8B5CF6' },
-    { name: 'Yellow', hex: '#EAB308' },
-    { name: 'Orange', hex: '#F97316' },
-    { name: 'Khaki', hex: '#A3A380' },
-    { name: 'Burgundy', hex: '#7C2D12' },
-    { name: 'Cream', hex: '#FEF3C7' },
-    // Jewelry/Accessory colors
-    { name: 'Gold', hex: '#FFD700' },
-    { name: 'Silver', hex: '#C0C0C0' },
-    { name: 'Bronze', hex: '#CD7F32' },
-    { name: 'Rose Gold', hex: '#E8B4A0' },
-    { name: 'Copper', hex: '#B87333' },
-    { name: 'Platinum', hex: '#E5E4E2' },
-    { name: 'Pearl', hex: '#F8F6F0' },
-    { name: 'Diamond', hex: '#F0F8FF' },
-    { name: 'Crystal', hex: '#E6E6FA' }
-  ];
+  // Dynamic color list based on user's actual clothing items
+  const allColors = useMemo(() => {
+    // Get all colors from user's clothing items
+    const userColors = new Set<string>();
+    
+    clothingItems.forEach(item => {
+      if (item.color) {
+        const itemColorString = String(item.color);
+        // Handle both comma-separated and single colors
+        const colors = itemColorString
+          .split(',')
+          .map(c => c.trim())
+          .filter(Boolean);
+        
+        colors.forEach(color => userColors.add(color));
+      }
+    });
+
+    // Master color reference with hex values (includes jewelry colors)
+    const colorReference: Record<string, { name: string; hex: string }> = {
+      // Base clothing colors
+      'black': { name: 'Black', hex: '#000000' },
+      'white': { name: 'White', hex: '#FFFFFF' },
+      'gray': { name: 'Gray', hex: '#6B7280' },
+      'grey': { name: 'Gray', hex: '#6B7280' }, // Alternative spelling
+      'navy': { name: 'Navy', hex: '#1E3A8A' },
+      'blue': { name: 'Blue', hex: '#3B82F6' },
+      'red': { name: 'Red', hex: '#EF4444' },
+      'green': { name: 'Green', hex: '#10B981' },
+      'brown': { name: 'Brown', hex: '#A16207' },
+      'beige': { name: 'Beige', hex: '#D6D3D1' },
+      'pink': { name: 'Pink', hex: '#EC4899' },
+      'purple': { name: 'Purple', hex: '#8B5CF6' },
+      'yellow': { name: 'Yellow', hex: '#EAB308' },
+      'orange': { name: 'Orange', hex: '#F97316' },
+      'khaki': { name: 'Khaki', hex: '#A3A380' },
+      'burgundy': { name: 'Burgundy', hex: '#7C2D12' },
+      'cream': { name: 'Cream', hex: '#FEF3C7' },
+      // Jewelry/Accessory colors
+      'gold': { name: 'Gold', hex: '#FFD700' },
+      'silver': { name: 'Silver', hex: '#C0C0C0' },
+      'bronze': { name: 'Bronze', hex: '#CD7F32' },
+      'rose gold': { name: 'Rose Gold', hex: '#E8B4A0' },
+      'copper': { name: 'Copper', hex: '#B87333' },
+      'platinum': { name: 'Platinum', hex: '#E5E4E2' },
+      'pearl': { name: 'Pearl', hex: '#F8F6F0' },
+      'diamond': { name: 'Diamond', hex: '#F0F8FF' },
+      'crystal': { name: 'Crystal', hex: '#E6E6FA' }
+    };
+
+    // Map user colors to color objects with hex values
+    const colorObjects = Array.from(userColors)
+      .map(color => {
+        const colorKey = color.toLowerCase();
+        const colorInfo = colorReference[colorKey];
+        
+        if (colorInfo) {
+          return colorInfo;
+        } else {
+          // For unknown colors, create a basic object
+          return {
+            name: color.charAt(0).toUpperCase() + color.slice(1),
+            hex: '#6B7280' // Default gray for unknown colors
+          };
+        }
+      })
+      .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+
+    console.log('🎨 Dynamic colors from user items:', colorObjects);
+    return colorObjects;
+  }, [clothingItems]);
 
   // Filter colors based on search term
   const filteredColors = useMemo(() => {
