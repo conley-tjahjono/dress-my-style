@@ -223,136 +223,108 @@ What can I help you with? 😊`,
   const extractRecommendedItems = (aiContent: string, clothes: ClothingItem[]) => {
     const recommendedItems: ClothingItem[] = [];
     const contentLower = aiContent.toLowerCase();
+    
+    console.log('🔍 Extracting recommendations from AI content:', aiContent);
+    console.log('👗 Available clothes:', clothes.map(item => `${item.name} by ${item.brand}`));
 
-    console.log('🔍 Extracting recommendations from AI content:', contentLower);
-    console.log('👕 Available clothes:', clothes.map(c => `${c.name} by ${c.brand}`));
-
-    // Look for clothing items mentioned in the AI response with better matching
+    // Enhanced matching: Look for specific patterns that indicate recommended items
     clothes.forEach(item => {
-      const itemName = item.name.toLowerCase();
-      const itemBrand = item.brand.toLowerCase();
-      const itemCategory = item.category.toLowerCase();
+      const itemName = item.name.toLowerCase().trim();
+      const itemBrand = item.brand.toLowerCase().trim();
+      const itemColor = item.color.toLowerCase().trim();
       
-      console.log('🔍 Checking item:', item.name, 'by', item.brand);
+      // Score-based matching system
+      let matchScore = 0;
       
-      // Multiple matching strategies
-      const nameMatch = contentLower.includes(itemName);
-      const brandMatch = contentLower.includes(itemBrand);
-      const categoryMatch = contentLower.includes(itemCategory);
-      
-      // Enhanced word-based matching for partial name matches
-      const nameWords = itemName.split(' ');
-      const hasNameWordMatch = nameWords.some(word => {
-        if (word.length > 2) { // Lower threshold for better matching
-          const wordMatch = contentLower.includes(word);
-          if (wordMatch) {
-            console.log('  📝 Word match found:', word, 'in', itemName);
-          }
-          return wordMatch;
-        }
-        return false;
-      });
-      
-      // Brand word matching - check if any part of the brand name appears
-      const brandWords = itemBrand.split(' ');
-      const hasBrandWordMatch = brandWords.some(word => {
-        if (word.length > 2) {
-          const wordMatch = contentLower.includes(word);
-          if (wordMatch) {
-            console.log('  🏷️ Brand word match found:', word, 'from', itemBrand);
-          }
-          return wordMatch;
-        }
-        return false;
-      });
-      
-      // Color matching - check if item color is mentioned
-      const itemColor = item.color.toLowerCase();
-      const colorMatch = contentLower.includes(itemColor);
-      if (colorMatch) {
-        console.log('  🎨 Color match found:', itemColor);
+      // Higher score for exact name matches
+      if (contentLower.includes(itemName)) {
+        matchScore += 10;
+        console.log(`📝 Name match found for "${item.name}": +10 points`);
       }
       
-      // Combination scoring system
-      let matchScore = 0;
-      if (nameMatch) matchScore += 3;
-      if (brandMatch) matchScore += 3;
-      if (hasNameWordMatch) matchScore += 2;
-      if (hasBrandWordMatch) matchScore += 2;
-      if (categoryMatch) matchScore += 1;
-      if (colorMatch) matchScore += 1;
+      // Higher score for brand + name combination
+      const brandAndName = `${itemName} by ${itemBrand}`;
+      const brandAndNameAlt = `${itemBrand} ${itemName}`;
+      if (contentLower.includes(brandAndName) || contentLower.includes(brandAndNameAlt)) {
+        matchScore += 15;
+        console.log(`🏷️ Brand+Name match found for "${item.name} by ${item.brand}": +15 points`);
+      }
       
-      console.log('  📊 Match score for', item.name, ':', matchScore, { nameMatch, brandMatch, hasNameWordMatch, hasBrandWordMatch, categoryMatch, colorMatch });
+      // Score for color mentions near the item
+      const nameIndex = contentLower.indexOf(itemName);
+      if (nameIndex !== -1 && itemColor && itemColor !== '#gray') {
+        const colorName = itemColor.replace('#', '');
+        const nearbyText = contentLower.substring(Math.max(0, nameIndex - 50), nameIndex + itemName.length + 50);
+        if (nearbyText.includes(colorName) || nearbyText.includes('black') || nearbyText.includes('white')) {
+          matchScore += 5;
+          console.log(`🎨 Color context match for "${item.name}": +5 points`);
+        }
+      }
       
-             // Lower threshold for matching to catch more relevant items
-       if (matchScore >= 2) {
-         console.log('✅ Found match:', item.name, 'via score:', matchScore);
-         recommendedItems.push(item);
-       }
+      // Score for specific product details (e.g., "7 inch", "linerless", "tank", etc.)
+      const productKeywords = itemName.split(' ');
+      productKeywords.forEach(keyword => {
+        if (keyword.length > 3 && contentLower.includes(keyword)) {
+          matchScore += 3;
+          console.log(`🔍 Keyword match "${keyword}" for "${item.name}": +3 points`);
+        }
+      });
+      
+      console.log(`📊 Final score for "${item.name} by ${item.brand}": ${matchScore}`);
+      
+      // Only include items with a significant match score
+      if (matchScore >= 8) {
+        recommendedItems.push(item);
+        console.log(`✅ Added "${item.name} by ${item.brand}" to recommendations (score: ${matchScore})`);
+      }
     });
 
-    // If no specific items found, intelligently select items based on context
-    if (recommendedItems.length === 0) {
-      console.log('⚠️ No specific matches found, using intelligent selection');
-      
-      // Look for outfit type keywords in the AI response
-      const isAthleticOutfit = contentLower.includes('athletic') || contentLower.includes('workout') || contentLower.includes('sports') || contentLower.includes('gym');
-      const isCasualOutfit = contentLower.includes('casual') || contentLower.includes('everyday') || contentLower.includes('comfortable');
-      const isFormalOutfit = contentLower.includes('formal') || contentLower.includes('business') || contentLower.includes('professional');
-      
-      if (isAthleticOutfit) {
-        const athleticItems = clothes.filter(item => 
-          item.tags.some(tag => tag.toLowerCase().includes('athletic') || tag.toLowerCase().includes('gym') || tag.toLowerCase().includes('sports')) ||
-          item.category.toLowerCase().includes('shorts') ||
-          item.category.toLowerCase().includes('tank') ||
-          item.name.toLowerCase().includes('athletic') ||
-          item.name.toLowerCase().includes('sport')
+    // Sort by relevance (could be enhanced with more sophisticated scoring)
+    recommendedItems.sort((a, b) => {
+      // Prioritize exact matches in the response
+      const aExactMatch = contentLower.includes(a.name.toLowerCase()) ? 1 : 0;
+      const bExactMatch = contentLower.includes(b.name.toLowerCase()) ? 1 : 0;
+      return bExactMatch - aExactMatch;
+    });
+
+    // If no specific items found with high scores, fall back to category-based recommendations
+    if (recommendedItems.length === 0 && currentWeather) {
+      console.log('⚠️ No high-score matches found, falling back to weather-based recommendations');
+      const temp = currentWeather.temperature;
+      if (temp <= 50) {
+        // Cold weather - look for warm items
+        const warmItems = clothes.filter(item => 
+          item.category.includes('jacket') || 
+          item.category.includes('sweater') || 
+          item.name.toLowerCase().includes('coat') ||
+          item.name.toLowerCase().includes('warm')
         );
-        recommendedItems.push(...athleticItems.slice(0, 4));
-      } else if (currentWeather) {
-        // Weather-based selection
-        const temp = currentWeather.temperature;
-        if (temp <= 50) {
-          const warmItems = clothes.filter(item => 
-            item.category.toLowerCase().includes('jacket') || 
-            item.category.toLowerCase().includes('sweater') || 
-            item.name.toLowerCase().includes('coat') ||
-            item.tags.some(tag => tag.toLowerCase().includes('winter') || tag.toLowerCase().includes('warm'))
-          );
-          recommendedItems.push(...warmItems.slice(0, 3));
-        } else if (temp >= 75) {
-          const lightItems = clothes.filter(item => 
-            item.category.toLowerCase().includes('shorts') || 
-            item.category.toLowerCase().includes('tank') ||
-            item.name.toLowerCase().includes('light') ||
-            item.tags.some(tag => tag.toLowerCase().includes('summer') || tag.toLowerCase().includes('light'))
-          );
-          recommendedItems.push(...lightItems.slice(0, 3));
-        } else {
-          // Moderate weather - general items
-          const generalItems = clothes.filter(item => 
-            item.category.toLowerCase().includes('shirt') || 
-            item.category.toLowerCase().includes('pants')
-          );
-          recommendedItems.push(...generalItems.slice(0, 3));
-        }
-      }
-      
-      // If still no items, just show a few random items
-      if (recommendedItems.length === 0) {
-        recommendedItems.push(...clothes.slice(0, 3));
+        recommendedItems.push(...warmItems.slice(0, 3));
+      } else if (temp >= 75) {
+        // Hot weather - look for light items
+        const lightItems = clothes.filter(item => 
+          item.category.includes('t-shirt') || 
+          item.category.includes('shorts') || 
+          item.name.toLowerCase().includes('light') ||
+          item.name.toLowerCase().includes('summer')
+        );
+        recommendedItems.push(...lightItems.slice(0, 3));
+      } else {
+        // Moderate weather - look for athletic/casual items mentioned in response
+        const athleticItems = clothes.filter(item =>
+          item.category.includes('shorts') ||
+          item.category.includes('tank') ||
+          item.category.includes('shoes') ||
+          item.name.toLowerCase().includes('athletic')
+        );
+        recommendedItems.push(...athleticItems.slice(0, 3));
       }
     }
 
-    // Remove duplicates (in case an item matched multiple criteria)
-    const uniqueItems = recommendedItems.filter((item, index, self) => 
-      index === self.findIndex(t => t.id === item.id)
-    );
+    const finalRecommendations = recommendedItems.slice(0, 4); // Limit to 4 items for display
+    console.log('🎯 Final recommendations:', finalRecommendations.map(item => `${item.name} by ${item.brand}`));
     
-    const finalItems = uniqueItems.slice(0, 4);
-    console.log('📦 Final recommended items:', finalItems.map(c => `${c.name} by ${c.brand}`));
-    
-    return finalItems;
+    return finalRecommendations;
   };
 
   const handleQuickAction = async (action: string) => {
