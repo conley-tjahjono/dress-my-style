@@ -233,19 +233,62 @@ What can I help you with? 😊`,
       const itemBrand = item.brand.toLowerCase();
       const itemCategory = item.category.toLowerCase();
       
+      console.log('🔍 Checking item:', item.name, 'by', item.brand);
+      
       // Multiple matching strategies
       const nameMatch = contentLower.includes(itemName);
       const brandMatch = contentLower.includes(itemBrand);
       const categoryMatch = contentLower.includes(itemCategory);
       
-      // Also check for partial matches and common clothing terms
+      // Enhanced word-based matching for partial name matches
       const nameWords = itemName.split(' ');
-      const hasNameWordMatch = nameWords.some(word => word.length > 3 && contentLower.includes(word));
+      const hasNameWordMatch = nameWords.some(word => {
+        if (word.length > 2) { // Lower threshold for better matching
+          const wordMatch = contentLower.includes(word);
+          if (wordMatch) {
+            console.log('  📝 Word match found:', word, 'in', itemName);
+          }
+          return wordMatch;
+        }
+        return false;
+      });
       
-      if (nameMatch || brandMatch || (categoryMatch && hasNameWordMatch)) {
-        console.log('✅ Found match:', item.name, 'via:', { nameMatch, brandMatch, categoryMatch, hasNameWordMatch });
-        recommendedItems.push(item);
+      // Brand word matching - check if any part of the brand name appears
+      const brandWords = itemBrand.split(' ');
+      const hasBrandWordMatch = brandWords.some(word => {
+        if (word.length > 2) {
+          const wordMatch = contentLower.includes(word);
+          if (wordMatch) {
+            console.log('  🏷️ Brand word match found:', word, 'from', itemBrand);
+          }
+          return wordMatch;
+        }
+        return false;
+      });
+      
+      // Color matching - check if item color is mentioned
+      const itemColor = item.color.toLowerCase();
+      const colorMatch = contentLower.includes(itemColor);
+      if (colorMatch) {
+        console.log('  🎨 Color match found:', itemColor);
       }
+      
+      // Combination scoring system
+      let matchScore = 0;
+      if (nameMatch) matchScore += 3;
+      if (brandMatch) matchScore += 3;
+      if (hasNameWordMatch) matchScore += 2;
+      if (hasBrandWordMatch) matchScore += 2;
+      if (categoryMatch) matchScore += 1;
+      if (colorMatch) matchScore += 1;
+      
+      console.log('  📊 Match score for', item.name, ':', matchScore, { nameMatch, brandMatch, hasNameWordMatch, hasBrandWordMatch, categoryMatch, colorMatch });
+      
+             // Lower threshold for matching to catch more relevant items
+       if (matchScore >= 2) {
+         console.log('✅ Found match:', item.name, 'via score:', matchScore);
+         recommendedItems.push(item);
+       }
     });
 
     // If no specific items found, intelligently select items based on context
@@ -301,7 +344,12 @@ What can I help you with? 😊`,
       }
     }
 
-    const finalItems = recommendedItems.slice(0, 4);
+    // Remove duplicates (in case an item matched multiple criteria)
+    const uniqueItems = recommendedItems.filter((item, index, self) => 
+      index === self.findIndex(t => t.id === item.id)
+    );
+    
+    const finalItems = uniqueItems.slice(0, 4);
     console.log('📦 Final recommended items:', finalItems.map(c => `${c.name} by ${c.brand}`));
     
     return finalItems;
