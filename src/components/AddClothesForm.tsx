@@ -381,6 +381,12 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     setShowPantsSizeDropdown(value.length > 0);
   };
 
+  // Helper function to normalize pants size format (e.g., "32 x 34" → "32x34")
+  const normalizePantsSize = (size: string) => {
+    // Remove extra spaces around 'x' and normalize to "32x34" format
+    return size.replace(/\s*x\s*/gi, 'x');
+  };
+
   const handleAddNewPantsSize = () => {
     if (pantsSizeInput.trim()) {
       setFormData(prev => ({ ...prev, size: pantsSizeInput.trim() }));
@@ -764,13 +770,25 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
 
       // Prepare data for Supabase
       console.log('🔄 Preparing data for Supabase...');
+      
+      // Normalize pants size format if it's a pants category
+      const normalizedSize = formData.category.toLowerCase() === 'pants' 
+        ? normalizePantsSize(formData.size)
+        : formData.size;
+      
+      console.log('👖 Size normalization:', {
+        original: formData.size,
+        normalized: normalizedSize,
+        category: formData.category
+      });
+      
       const clothesData = {
         user_id: user.id,
         name: formData.name,
         category: formData.category,
         brand: formData.brand,
         size_type: formData.category, // Use category as size_type for database compatibility
-        size: formData.size,
+        size: normalizedSize,
         price_min: price, // Store as single price value for now
         price_max: price, // Store as single price value for now
         image_url: formData.imageUrl,
