@@ -150,25 +150,46 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     fetchUserBrands();
   }, [user]);
 
-  // Common clothing colors with names and hex values
-  const colorOptions = [
-    { name: 'Black', hex: '#000000' },
-    { name: 'White', hex: '#FFFFFF' },
-    { name: 'Gray', hex: '#6B7280' },
-    { name: 'Navy', hex: '#1E3A8A' },
-    { name: 'Blue', hex: '#3B82F6' },
-    { name: 'Red', hex: '#EF4444' },
-    { name: 'Green', hex: '#10B981' },
-    { name: 'Brown', hex: '#A16207' },
-    { name: 'Beige', hex: '#D6D3D1' },
-    { name: 'Pink', hex: '#EC4899' },
-    { name: 'Purple', hex: '#8B5CF6' },
-    { name: 'Yellow', hex: '#EAB308' },
-    { name: 'Orange', hex: '#F97316' },
-    { name: 'Khaki', hex: '#A3A380' },
-    { name: 'Burgundy', hex: '#7C2D12' },
-    { name: 'Cream', hex: '#FEF3C7' }
-  ];
+  // Dynamic color options based on selected category
+  const colorOptions = useMemo(() => {
+    // Base clothing colors
+    const baseColorOptions = [
+      { name: 'Black', hex: '#000000' },
+      { name: 'White', hex: '#FFFFFF' },
+      { name: 'Gray', hex: '#6B7280' },
+      { name: 'Navy', hex: '#1E3A8A' },
+      { name: 'Blue', hex: '#3B82F6' },
+      { name: 'Red', hex: '#EF4444' },
+      { name: 'Green', hex: '#10B981' },
+      { name: 'Brown', hex: '#A16207' },
+      { name: 'Beige', hex: '#D6D3D1' },
+      { name: 'Pink', hex: '#EC4899' },
+      { name: 'Purple', hex: '#8B5CF6' },
+      { name: 'Yellow', hex: '#EAB308' },
+      { name: 'Orange', hex: '#F97316' },
+      { name: 'Khaki', hex: '#A3A380' },
+      { name: 'Burgundy', hex: '#7C2D12' },
+      { name: 'Cream', hex: '#FEF3C7' }
+    ];
+
+    // Jewelry/Accessory specific colors
+    const jewelryColorOptions = [
+      { name: 'Gold', hex: '#FFD700' },
+      { name: 'Silver', hex: '#C0C0C0' },
+      { name: 'Bronze', hex: '#CD7F32' },
+      { name: 'Rose Gold', hex: '#E8B4A0' },
+      { name: 'Copper', hex: '#B87333' },
+      { name: 'Platinum', hex: '#E5E4E2' },
+      { name: 'Pearl', hex: '#F8F6F0' },
+      { name: 'Diamond', hex: '#F0F8FF' },
+      { name: 'Crystal', hex: '#E6E6FA' }
+    ];
+
+    if (formData.category.toLowerCase() === 'accessories') {
+      return [...baseColorOptions, ...jewelryColorOptions];
+    }
+    return baseColorOptions;
+  }, [formData.category]);
 
   const categories = [
     'Choose Category',

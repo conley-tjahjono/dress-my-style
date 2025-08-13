@@ -461,8 +461,9 @@ const Clothes = (): React.ReactElement => {
     );
   };
 
-    // Color list matching AddClothesForm
+    // Color list matching AddClothesForm (including jewelry colors)
   const allColors = [
+    // Base clothing colors
     { name: 'Black', hex: '#000000' },
     { name: 'White', hex: '#FFFFFF' },
     { name: 'Gray', hex: '#6B7280' },
@@ -478,7 +479,17 @@ const Clothes = (): React.ReactElement => {
     { name: 'Orange', hex: '#F97316' },
     { name: 'Khaki', hex: '#A3A380' },
     { name: 'Burgundy', hex: '#7C2D12' },
-    { name: 'Cream', hex: '#FEF3C7' }
+    { name: 'Cream', hex: '#FEF3C7' },
+    // Jewelry/Accessory colors
+    { name: 'Gold', hex: '#FFD700' },
+    { name: 'Silver', hex: '#C0C0C0' },
+    { name: 'Bronze', hex: '#CD7F32' },
+    { name: 'Rose Gold', hex: '#E8B4A0' },
+    { name: 'Copper', hex: '#B87333' },
+    { name: 'Platinum', hex: '#E5E4E2' },
+    { name: 'Pearl', hex: '#F8F6F0' },
+    { name: 'Diamond', hex: '#F0F8FF' },
+    { name: 'Crystal', hex: '#E6E6FA' }
   ];
 
   // Filter colors based on search term
