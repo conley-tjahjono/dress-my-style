@@ -223,42 +223,114 @@ What can I help you with? 😊`,
   const extractRecommendedItems = (aiContent: string, clothes: ClothingItem[]) => {
     const recommendedItems: ClothingItem[] = [];
     const contentLower = aiContent.toLowerCase();
+    
+    console.log('🤖 AI Content:', aiContent);
+    console.log('👕 User clothes:', clothes.map(c => `${c.name} (${c.category})`));
 
-    // Look for clothing items mentioned in the AI response
-    clothes.forEach(item => {
-      const itemName = item.name.toLowerCase();
-      const itemBrand = item.brand.toLowerCase();
+    // Enhanced matching: Look for clothing types, categories, and characteristics
+    const categoryMappings = {
+      // Tops
+      'tank': ['tanks', 'tank tops', 'shirts'],
+      'tank top': ['tanks', 'tank tops', 'shirts'], 
+      'shirt': ['shirts', 'tank tops'],
+      't-shirt': ['shirts', 'tank tops'],
+      'top': ['shirts', 'tank tops'],
       
-      // Check if the item name or brand is mentioned in the response
-      if (contentLower.includes(itemName) || contentLower.includes(itemBrand)) {
-        recommendedItems.push(item);
+      // Bottoms
+      'short': ['shorts'],
+      'shorts': ['shorts'],
+      'pant': ['pants'],
+      'pants': ['pants'],
+      'jean': ['pants'],
+      'jeans': ['pants'],
+      
+      // Footwear
+      'shoe': ['shoes'],
+      'shoes': ['shoes'],
+      'sneaker': ['shoes'],
+      'sneakers': ['shoes'],
+      'athletic shoe': ['shoes'],
+      
+      // Outerwear
+      'jacket': ['jackets'],
+      'sweater': ['sweaters'],
+      'hoodie': ['sweaters', 'jackets']
+    };
+
+    // Look for mentioned clothing types and find matching items from user's wardrobe
+    Object.entries(categoryMappings).forEach(([keyword, categories]) => {
+      if (contentLower.includes(keyword)) {
+        console.log(`🔍 Found keyword "${keyword}", looking for categories:`, categories);
+        
+        const matchingItems = clothes.filter(item => {
+          const itemCategory = item.category.toLowerCase();
+          return categories.some(cat => itemCategory.includes(cat.slice(0, -1))); // Remove 's' for partial matching
+        });
+        
+        console.log(`👔 Found ${matchingItems.length} items for "${keyword}":`, matchingItems.map(i => i.name));
+        
+        // Add items if not already included
+        matchingItems.forEach(item => {
+          if (!recommendedItems.find(r => r.id === item.id)) {
+            recommendedItems.push(item);
+          }
+        });
       }
     });
 
-    // If no specific items found, return a few items from relevant categories
-    if (recommendedItems.length === 0 && currentWeather) {
-      const temp = currentWeather.temperature;
-      if (temp <= 50) {
-        // Cold weather - look for warm items
-        const warmItems = clothes.filter(item => 
-          item.category.includes('jacket') || 
-          item.category.includes('sweater') || 
-          item.name.toLowerCase().includes('coat') ||
-          item.name.toLowerCase().includes('warm')
+    // Look for color mentions and prioritize matching colors
+    const colorKeywords = ['black', 'white', 'blue', 'red', 'green', 'gray', 'navy', 'brown'];
+    colorKeywords.forEach(color => {
+      if (contentLower.includes(color)) {
+        console.log(`🎨 Found color "${color}"`);
+        const colorMatchingItems = clothes.filter(item => 
+          item.color.toLowerCase().includes(color) && 
+          !recommendedItems.find(r => r.id === item.id)
         );
+        recommendedItems.push(...colorMatchingItems.slice(0, 2));
+      }
+    });
+
+    // If still no items found, use weather-based fallback with better category matching
+    if (recommendedItems.length === 0 && currentWeather) {
+      console.log('🌤️ Using weather-based fallback');
+      const temp = currentWeather.temperature;
+      
+      if (temp <= 50) {
+        // Cold weather - prioritize warm items
+        const warmItems = clothes.filter(item => {
+          const category = item.category.toLowerCase();
+          const name = item.name.toLowerCase();
+          return category.includes('jacket') || 
+                 category.includes('sweater') || 
+                 name.includes('warm') ||
+                 name.includes('coat') ||
+                 category.includes('long');
+        });
         recommendedItems.push(...warmItems.slice(0, 3));
       } else if (temp >= 75) {
-        // Hot weather - look for light items
-        const lightItems = clothes.filter(item => 
-          item.category.includes('t-shirt') || 
-          item.category.includes('shorts') || 
-          item.name.toLowerCase().includes('light') ||
-          item.name.toLowerCase().includes('summer')
-        );
+        // Hot weather - prioritize light/summer items
+        const lightItems = clothes.filter(item => {
+          const category = item.category.toLowerCase();
+          const name = item.name.toLowerCase();
+          return category.includes('short') || 
+                 category.includes('tank') || 
+                 name.includes('light') ||
+                 name.includes('summer') ||
+                 category.includes('t-shirt');
+        });
         recommendedItems.push(...lightItems.slice(0, 3));
+      } else {
+        // Moderate weather - any appropriate items
+        const moderateItems = clothes.filter(item => {
+          const category = item.category.toLowerCase();
+          return category.includes('shirt') || category.includes('pant') || category.includes('short');
+        });
+        recommendedItems.push(...moderateItems.slice(0, 3));
       }
     }
 
+    console.log(`✅ Final recommendations (${recommendedItems.length}):`, recommendedItems.map(i => i.name));
     return recommendedItems.slice(0, 4); // Limit to 4 items for display
   };
 
