@@ -64,6 +64,10 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
   const [showAccessorySizeDropdown, setShowAccessorySizeDropdown] = useState(false);
   const [accessorySizeInput, setAccessorySizeInput] = useState('');
   
+  // Pants size input state
+  const [showPantsSizeDropdown, setShowPantsSizeDropdown] = useState(false);
+  const [pantsSizeInput, setPantsSizeInput] = useState('');
+  
   // Image upload state
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -108,6 +112,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
       
       setBrandInput(editingItem.brand || '');
       setAccessorySizeInput(editingItem.size || '');
+      setPantsSizeInput(editingItem.size || '');
       setImagePreview(editingItem.image_url || editingItem.image || '');
       
       // Set active tab based on whether we have an image URL
@@ -226,6 +231,11 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     'XS', 'S', 'M', 'L', 'XL'
   ];
 
+  // Default pants sizes (keeping current pants size options)
+  const defaultPantsSizes = [
+    'XS', 'S', 'M', 'L', 'XL', 'XXL'
+  ];
+
   // Combine hardcoded brands with user's existing brands
   const allBrands = useMemo(() => {
     const combined = [...baseBrands, ...userBrands];
@@ -261,6 +271,11 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
   // Filter accessory sizes based on input
   const filteredAccessorySizes = defaultAccessorySizes.filter(size =>
     size.toLowerCase().includes(accessorySizeInput.toLowerCase())
+  );
+
+  // Filter pants sizes based on input
+  const filteredPantsSizes = defaultPantsSizes.filter(size =>
+    size.toLowerCase().includes(pantsSizeInput.toLowerCase())
   );
 
   // Helper function to check if tag is selected
@@ -350,6 +365,26 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     if (accessorySizeInput.trim()) {
       setFormData(prev => ({ ...prev, size: accessorySizeInput.trim() }));
       setShowAccessorySizeDropdown(false);
+    }
+  };
+
+  // Pants size management functions
+  const handlePantsSizeSelect = (size: string) => {
+    setFormData(prev => ({ ...prev, size }));
+    setPantsSizeInput(size);
+    setShowPantsSizeDropdown(false);
+  };
+
+  const handlePantsSizeInputChange = (value: string) => {
+    setPantsSizeInput(value);
+    setFormData(prev => ({ ...prev, size: value }));
+    setShowPantsSizeDropdown(value.length > 0);
+  };
+
+  const handleAddNewPantsSize = () => {
+    if (pantsSizeInput.trim()) {
+      setFormData(prev => ({ ...prev, size: pantsSizeInput.trim() }));
+      setShowPantsSizeDropdown(false);
     }
   };
 
@@ -609,6 +644,15 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     setTimeout(() => {
       if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
         setShowAccessorySizeDropdown(false);
+      }
+    }, 100);
+  };
+
+  const handlePantsSizeBlur = (e: React.FocusEvent) => {
+    // Delay to allow for dropdown clicks
+    setTimeout(() => {
+      if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
+        setShowPantsSizeDropdown(false);
       }
     }, 100);
   };
@@ -1185,7 +1229,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                   Size
                 </label>
                 
-                {/* Accessories get dropdown input, others get regular select */}
+                {/* Accessories and Pants get dropdown input, others get regular select */}
                 {formData.category.toLowerCase() === 'accessories' ? (
                   <div className="relative" onBlur={handleAccessorySizeBlur}>
                     <input
@@ -1226,6 +1270,53 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                         
                         {/* No results message */}
                         {filteredAccessorySizes.length === 0 && accessorySizeInput.trim() && !defaultAccessorySizes.some(size => size.toLowerCase() === accessorySizeInput.toLowerCase()) && (
+                          <div className="px-3 py-2 text-gray-500 text-sm">
+                            No matching sizes found
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : formData.category.toLowerCase() === 'pants' ? (
+                  <div className="relative" onBlur={handlePantsSizeBlur}>
+                    <input
+                      type="text"
+                      placeholder="Type or select a size"
+                      value={pantsSizeInput}
+                      onChange={(e) => handlePantsSizeInputChange(e.target.value)}
+                      onFocus={() => setShowPantsSizeDropdown(true)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    
+                    {/* Pants Size Dropdown */}
+                    {showPantsSizeDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                        {/* Existing sizes that match input */}
+                        {filteredPantsSizes.map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => handlePantsSizeSelect(size)}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 transition-colors"
+                          >
+                            {size}
+                          </button>
+                        ))}
+                        
+                        {/* Add new size option */}
+                        {pantsSizeInput.trim() &&
+                         !filteredPantsSizes.some(size => size.toLowerCase() === pantsSizeInput.toLowerCase()) && (
+                          <button
+                            type="button"
+                            onClick={handleAddNewPantsSize}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 transition-colors text-green-600 font-medium"
+                          >
+                            + Add "{pantsSizeInput}"
+                          </button>
+                        )}
+                        
+                        {/* No results message */}
+                        {filteredPantsSizes.length === 0 && pantsSizeInput.trim() && !defaultPantsSizes.some(size => size.toLowerCase() === pantsSizeInput.toLowerCase()) && (
                           <div className="px-3 py-2 text-gray-500 text-sm">
                             No matching sizes found
                           </div>
