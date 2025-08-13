@@ -221,17 +221,9 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     'Versace', 'Victoria\'s Secret', 'Walmart', 'Zara', 'Other'
   ];
 
-  // Default accessory sizes (includes common jewelry and accessory sizes)
+  // Default accessory sizes
   const defaultAccessorySizes = [
-    'XS', 'S', 'M', 'L', 'XL',
-    // Common ring sizes
-    '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11',
-    // Common watch/bracelet sizes
-    '16cm', '17cm', '18cm', '19cm', '20cm', '21cm', '22cm',
-    // Common necklace lengths
-    '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"',
-    // Adjustable
-    'Adjustable', 'One Size'
+    'XS', 'S', 'M', 'L', 'XL'
   ];
 
   // Combine hardcoded brands with user's existing brands
@@ -1198,7 +1190,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                   <div className="relative" onBlur={handleAccessorySizeBlur}>
                     <input
                       type="text"
-                      placeholder="Type or select a size (e.g., S, M, L, 7, 16cm, 18 inches)"
+                      placeholder="Type or select a size"
                       value={accessorySizeInput}
                       onChange={(e) => handleAccessorySizeInputChange(e.target.value)}
                       onFocus={() => setShowAccessorySizeDropdown(true)}
