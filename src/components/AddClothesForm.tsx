@@ -60,6 +60,10 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [brandInput, setBrandInput] = useState('');
   
+  // Accessory size input state
+  const [showAccessorySizeDropdown, setShowAccessorySizeDropdown] = useState(false);
+  const [accessorySizeInput, setAccessorySizeInput] = useState('');
+  
   // Image upload state
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -103,6 +107,7 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
       });
       
       setBrandInput(editingItem.brand || '');
+      setAccessorySizeInput(editingItem.size || '');
       setImagePreview(editingItem.image_url || editingItem.image || '');
       
       // Set active tab based on whether we have an image URL
@@ -216,6 +221,19 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     'Versace', 'Victoria\'s Secret', 'Walmart', 'Zara', 'Other'
   ];
 
+  // Default accessory sizes (includes common jewelry and accessory sizes)
+  const defaultAccessorySizes = [
+    'XS', 'S', 'M', 'L', 'XL',
+    // Common ring sizes
+    '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11',
+    // Common watch/bracelet sizes
+    '16cm', '17cm', '18cm', '19cm', '20cm', '21cm', '22cm',
+    // Common necklace lengths
+    '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"',
+    // Adjustable
+    'Adjustable', 'One Size'
+  ];
+
   // Combine hardcoded brands with user's existing brands
   const allBrands = useMemo(() => {
     const combined = [...baseBrands, ...userBrands];
@@ -246,6 +264,11 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
   // Filter brands based on input
   const filteredBrands = allBrands.filter(brand => 
     brand.toLowerCase().includes(brandInput.toLowerCase())
+  );
+
+  // Filter accessory sizes based on input
+  const filteredAccessorySizes = defaultAccessorySizes.filter(size =>
+    size.toLowerCase().includes(accessorySizeInput.toLowerCase())
   );
 
   // Helper function to check if tag is selected
@@ -315,6 +338,26 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     if (brandInput.trim() && !allBrands.includes(brandInput.trim())) {
       setFormData(prev => ({ ...prev, brand: brandInput.trim() }));
       setShowBrandDropdown(false);
+    }
+  };
+
+  // Accessory size management functions
+  const handleAccessorySizeSelect = (size: string) => {
+    setFormData(prev => ({ ...prev, size }));
+    setAccessorySizeInput(size);
+    setShowAccessorySizeDropdown(false);
+  };
+
+  const handleAccessorySizeInputChange = (value: string) => {
+    setAccessorySizeInput(value);
+    setFormData(prev => ({ ...prev, size: value }));
+    setShowAccessorySizeDropdown(value.length > 0);
+  };
+
+  const handleAddNewAccessorySize = () => {
+    if (accessorySizeInput.trim()) {
+      setFormData(prev => ({ ...prev, size: accessorySizeInput.trim() }));
+      setShowAccessorySizeDropdown(false);
     }
   };
 
@@ -565,6 +608,15 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
     setTimeout(() => {
       if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
         setShowBrandDropdown(false);
+      }
+    }, 100);
+  };
+
+  const handleAccessorySizeBlur = (e: React.FocusEvent) => {
+    // Delay to allow for dropdown clicks
+    setTimeout(() => {
+      if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
+        setShowAccessorySizeDropdown(false);
       }
     }, 100);
   };
@@ -1140,17 +1192,68 @@ const AddClothesForm: React.FC<AddClothesFormProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Size
                 </label>
-                <select
-                  value={formData.size}
-                  onChange={(e) => setFormData(prev => ({ ...prev, size: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  {currentSizeOptions.map((size) => (
-                    <option key={size} value={size === 'Select Size' ? '' : size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
+                
+                {/* Accessories get dropdown input, others get regular select */}
+                {formData.category.toLowerCase() === 'accessories' ? (
+                  <div className="relative" onBlur={handleAccessorySizeBlur}>
+                    <input
+                      type="text"
+                      placeholder="Type or select a size (e.g., S, M, L, 7, 16cm, 18 inches)"
+                      value={accessorySizeInput}
+                      onChange={(e) => handleAccessorySizeInputChange(e.target.value)}
+                      onFocus={() => setShowAccessorySizeDropdown(true)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    
+                    {/* Accessory Size Dropdown */}
+                    {showAccessorySizeDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                        {/* Existing sizes that match input */}
+                        {filteredAccessorySizes.map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => handleAccessorySizeSelect(size)}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 transition-colors"
+                          >
+                            {size}
+                          </button>
+                        ))}
+                        
+                        {/* Add new size option */}
+                        {accessorySizeInput.trim() &&
+                         !filteredAccessorySizes.some(size => size.toLowerCase() === accessorySizeInput.toLowerCase()) && (
+                          <button
+                            type="button"
+                            onClick={handleAddNewAccessorySize}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 transition-colors text-green-600 font-medium"
+                          >
+                            + Add "{accessorySizeInput}"
+                          </button>
+                        )}
+                        
+                        {/* No results message */}
+                        {filteredAccessorySizes.length === 0 && accessorySizeInput.trim() && !defaultAccessorySizes.some(size => size.toLowerCase() === accessorySizeInput.toLowerCase()) && (
+                          <div className="px-3 py-2 text-gray-500 text-sm">
+                            No matching sizes found
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <select
+                    value={formData.size}
+                    onChange={(e) => setFormData(prev => ({ ...prev, size: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    {currentSizeOptions.map((size) => (
+                      <option key={size} value={size === 'Select Size' ? '' : size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Price */}
