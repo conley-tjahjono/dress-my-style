@@ -24,7 +24,7 @@ export const imageAnalysisService = {
           'Authorization': `Bearer ${OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4o',
           messages: [
             {
               role: 'user',
@@ -166,11 +166,11 @@ const validateCategory = (category) => {
   return '';
 };
 
-// Calculate cost for image analysis (GPT-4o-mini with vision)
+// Calculate cost for image analysis (GPT-4o with vision)
 const calculateImageAnalysisCost = (inputTokens, outputTokens) => {
-  // GPT-4o-mini pricing (as of 2024)
-  const inputCostPer1K = 0.00015;  // $0.00015 per 1K input tokens
-  const outputCostPer1K = 0.0006;  // $0.0006 per 1K output tokens
+  // GPT-4o pricing (as of 2024)
+  const inputCostPer1K = 0.0025;  // $0.0025 per 1K input tokens  
+  const outputCostPer1K = 0.01;   // $0.01 per 1K output tokens
   
   const inputCost = (inputTokens / 1000) * inputCostPer1K;
   const outputCost = (outputTokens / 1000) * outputCostPer1K;
