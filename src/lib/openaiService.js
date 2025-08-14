@@ -26,13 +26,51 @@ export const openaiService = {
         };
       }
 
-      // Build context about user's wardrobe
-      const clothesDescription = userClothes.map(item => 
-        `${item.name} by ${item.brand} (${item.category}, ${item.color}, tags: ${item.tags.join(', ')})`
-      ).join('\n');
+      // Build comprehensive context about user's wardrobe with all metadata
+      const clothesDescription = userClothes.map(item => {
+        const metadata = [];
+        
+        // Core info
+        metadata.push(`Category: ${item.category}`);
+        metadata.push(`Color: ${item.color}`);
+        
+        // Size info (if available)
+        if (item.size) {
+          metadata.push(`Size: ${item.size}`);
+        }
+        
+        // Price info (if available) 
+        if (item.price_min && item.price_max) {
+          if (item.price_min === item.price_max) {
+            metadata.push(`Price: $${item.price_min}`);
+          } else {
+            metadata.push(`Price: $${item.price_min}-$${item.price_max}`);
+          }
+        } else if (item.price_min) {
+          metadata.push(`Price: $${item.price_min}`);
+        }
+        
+        // Tags (style/occasion info)
+        if (item.tags && item.tags.length > 0) {
+          metadata.push(`Tags: ${item.tags.join(', ')}`);
+        }
+        
+        // Purchase age (for styling context)
+        if (item.created_at) {
+          const purchaseDate = new Date(item.created_at);
+          const monthsOld = Math.floor((Date.now() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
+          if (monthsOld > 0) {
+            metadata.push(`Owned: ${monthsOld} months`);
+          }
+        }
+        
+        return `${item.name} by ${item.brand} (${metadata.join(', ')})`;
+      }).join('\n');
 
       // Concise prompt focused on outfit + reasoning
-      const systemPrompt = `You are a personal stylist. Recommend outfits using ONLY items from the user's wardrobe. Format your response as:
+      const systemPrompt = `You are a personal stylist. Recommend outfits using ONLY items from the user's wardrobe. Each item includes metadata like color, size, price, tags, and age. Consider this info for better styling decisions.
+
+Format your response as:
 
 **Outfit Recommendation:**
 1. [Item Name] by [Brand]
@@ -40,7 +78,7 @@ export const openaiService = {
 3. [Item Name] by [Brand]
 
 **Why this works:**
-Brief explanation of why these pieces work well together for the weather and occasion.
+Brief explanation considering weather, color coordination, occasion fit, and price/style balance.
 
 Keep responses under 100 words. Use item names and brands exactly as listed.`;
 
