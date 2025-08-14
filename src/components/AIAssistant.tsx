@@ -260,12 +260,76 @@ What can I help you with? 😊`,
         console.log(`🎯 EXACT match "${item.name} by ${item.brand}": +20 points`);
       }
       
-      // 2. ITEM NAME MATCH (if found, check for attribute specificity)
-      const nameIndex = contentLower.indexOf(itemName);
+      // 2. ITEM NAME MATCH (enhanced with partial and fuzzy matching)
+      let nameMatchFound = false;
+      let nameIndex = contentLower.indexOf(itemName);
+      
+      // Try exact match first
       if (nameIndex !== -1) {
         matchScore += 15;
-        attributeMatches.push('name');
-        console.log(`📝 Name match "${item.name}": +15 points`);
+        attributeMatches.push('name-exact');
+        nameMatchFound = true;
+        console.log(`📝 EXACT name match "${item.name}": +15 points`);
+      } else {
+        // Try partial matching for complex item names
+        const itemWords = itemName.split(' ').filter(word => word.length > 2); // Filter out short words like "by", "of"
+        const significantWords = itemWords.filter(word => 
+          !['the', 'and', 'or', 'for', 'with', 'in', 'on', 'at', 'to', 'by'].includes(word)
+        );
+        
+        // Check if significant words from item name appear in AI content
+        let wordMatches = 0;
+        const matchPositions: number[] = [];
+        
+        significantWords.forEach(word => {
+          const wordIndex = contentLower.indexOf(word);
+          if (wordIndex !== -1) {
+            wordMatches++;
+            matchPositions.push(wordIndex);
+          }
+        });
+        
+        // If we found most of the significant words, consider it a partial match
+        const matchPercentage = wordMatches / Math.max(significantWords.length, 1);
+        if (matchPercentage >= 0.6 && wordMatches >= 2) { // At least 60% of words and minimum 2 words
+          matchScore += 12; // Slightly lower than exact match
+          attributeMatches.push('name-partial');
+          nameMatchFound = true;
+          nameIndex = Math.min(...matchPositions); // Use the earliest word position for context
+          console.log(`📝 PARTIAL name match "${item.name}" (${wordMatches}/${significantWords.length} words): +12 points`);
+          console.log(`🔤 Matched words: ${significantWords.filter(word => contentLower.includes(word)).join(', ')}`);
+        }
+        
+        // Also try fuzzy matching for common variations
+        const itemNameVariations = [
+          itemName.replace(/trouser/g, 'trousers'), // Handle singular/plural
+          itemName.replace(/trousers/g, 'trouser'),
+          itemName.replace(/pant/g, 'pants'),
+          itemName.replace(/pants/g, 'pant'),
+          itemName.replace(/shoe/g, 'shoes'),
+          itemName.replace(/shoes/g, 'shoe'),
+          itemName.replace(/short/g, 'shorts'),
+          itemName.replace(/shorts/g, 'short'),
+          // Remove size info that might be in the item name
+          itemName.replace(/\d+[a-z]*/g, '').trim(), // Remove size like "32L", "7\"", etc.
+        ];
+        
+        if (!nameMatchFound) {
+          for (const variation of itemNameVariations) {
+            const varIndex = contentLower.indexOf(variation);
+            if (varIndex !== -1 && variation !== itemName) {
+              matchScore += 10;
+              attributeMatches.push('name-variation');
+              nameMatchFound = true;
+              nameIndex = varIndex;
+              console.log(`📝 VARIATION match "${variation}" for "${item.name}": +10 points`);
+              break;
+            }
+          }
+        }
+      }
+      
+      if (nameMatchFound) {
         
         // Get context around the item name mention (±100 characters)
         const contextStart = Math.max(0, nameIndex - 100);
@@ -302,12 +366,27 @@ What can I help you with? 😊`,
           }
         }
         
-        // 4. SIZE VALIDATION (if AI mentions size)
+        // 4. SIZE VALIDATION (enhanced for various formats)
         if (itemSize) {
           const sizeVariants = [itemSize];
-          // Add size variations
+          
+          // Add size variations for different formats
           if (itemSize.includes('x')) {
             sizeVariants.push(itemSize.replace('x', ' x '), itemSize.replace('x', ' x'));
+          }
+          
+          // Handle length variations (32L, 34W, etc.)
+          const sizeMatch = itemSize.match(/(\d+)([a-z]?)/i);
+          if (sizeMatch) {
+            const number = sizeMatch[1];
+            const letter = sizeMatch[2]?.toLowerCase();
+            
+            // Add variations: "32", "32L", "32l", etc.
+            sizeVariants.push(number);
+            if (letter) {
+              sizeVariants.push(`${number}${letter}`);
+              sizeVariants.push(`${number}${letter.toUpperCase()}`);
+            }
           }
           
           const hasSizeMatch = sizeVariants.some(size => itemContext.includes(size));
@@ -315,14 +394,34 @@ What can I help you with? 😊`,
           if (hasSizeMatch) {
             matchScore += 8;
             attributeMatches.push('size');
-            console.log(`📏 Size match for "${item.name}" (${itemSize}): +8 points`);
+            console.log(`📏 Size match for "${item.name}" (${itemSize}, variants: ${sizeVariants.join(', ')}): +8 points`);
           } else {
-            // Check if AI mentions any size for this item type
-            const mentionsSize = /\b(xs|small|medium|large|xl|xxl|\d+x\d+|size \w+)\b/.test(itemContext);
+            // Check if AI mentions any size for this item type (but be more flexible)
+            const mentionsSize = /\b(xs|small|medium|large|xl|xxl|\d+[a-z]*|\d+x\d+|size \w+)\b/.test(itemContext);
             if (mentionsSize) {
-              matchScore -= 10;
-              console.log(`❌ Size MISMATCH for "${item.name}" - AI mentions different size: -10 points`);
+              // Only penalize if there's a clear size mismatch (not just different format)
+              const aiSizes = itemContext.match(/\b(\d+[a-z]*|\d+x\d+|xs|small|medium|large|xl|xxl)\b/g);
+              const hasConflictingSize = aiSizes && aiSizes.some(aiSize => {
+                return !sizeVariants.some(variant => 
+                  aiSize.toLowerCase().includes(variant.toLowerCase()) || 
+                  variant.toLowerCase().includes(aiSize.toLowerCase())
+                );
+              });
+              
+              if (hasConflictingSize) {
+                matchScore -= 5; // Reduced penalty for size format differences
+                console.log(`⚠️ Size format difference for "${item.name}" - AI: ${aiSizes?.join(', ')}, Item: ${itemSize}: -5 points`);
+              }
             }
+          }
+        } else {
+          // If item has no size but AI mentions size in name, try to extract it
+          const aiSizeInName = contentLower.match(/\b(\d+[a-z]*)\b/);
+          if (aiSizeInName) {
+            console.log(`🔍 AI mentions size "${aiSizeInName[1]}" but item "${item.name}" has no size info`);
+            // Small bonus for items that might match the mentioned size context
+            matchScore += 2;
+            attributeMatches.push('size-context');
           }
         }
         
@@ -362,12 +461,14 @@ What can I help you with? 😊`,
       
       console.log(`📊 Final score for "${item.name} by ${item.brand}": ${matchScore} (matches: ${attributeMatches.join(', ')})`);
       
-      // Higher threshold for precision - only include items with strong matches
-      if (matchScore >= 15) {
+      // Adjusted threshold for more sophisticated matching - include good partial matches
+      if (matchScore >= 12) {
         recommendedItems.push({ ...item, matchScore, attributeMatches });
         console.log(`✅ ADDED "${item.name} by ${item.brand}" to recommendations (score: ${matchScore})`);
       } else if (matchScore > 0) {
         console.log(`⚠️ EXCLUDED "${item.name} by ${item.brand}" - score too low (${matchScore})`);
+      } else {
+        console.log(`❌ NO MATCH for "${item.name} by ${item.brand}" - no relevant keywords found`);
       }
     });
 
