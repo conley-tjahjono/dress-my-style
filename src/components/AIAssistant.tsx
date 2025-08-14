@@ -531,7 +531,7 @@ What can I help you with? 😊`,
     }
 
     // Clean up the objects before returning (remove our temporary scoring properties)
-    const finalRecommendations = recommendedItems.slice(0, 4).map(item => {
+    const finalRecommendations = recommendedItems.map(item => {
       const cleanItem = { ...item };
       delete cleanItem.matchScore;
       delete cleanItem.attributeMatches;
@@ -692,7 +692,7 @@ What can I help you with? 😊`,
                       <div className="mt-3 space-y-2">
                         <p className="text-xs text-gray-500 font-medium">Recommended items:</p>
                         <div className="grid grid-cols-2 gap-2">
-                          {message.recommendations.slice(0, 4).map((item: ClothingItem) => (
+                          {message.recommendations.map((item: ClothingItem) => (
                             <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-2">
                               <div className="aspect-square bg-gray-100 rounded-md mb-2 overflow-hidden">
                                 {item.image_url || item.image ? (
