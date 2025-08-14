@@ -94,12 +94,12 @@ Recommend an outfit from their wardrobe items only.`;
       // Make actual OpenAI API call
       console.log('📡 Calling OpenAI API...');
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini", // Using GPT-4o mini for better quality while maintaining cost efficiency
+        model: "gpt-4o", // Using GPT-4o flagship model for superior outfit recommendations and fashion intelligence
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        max_tokens: 150,
+        max_tokens: 200,
         temperature: 0.7
       });
       
