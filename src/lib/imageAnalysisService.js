@@ -35,10 +35,24 @@ export const imageAnalysisService = {
 {
   "name": "descriptive name of the item",
   "category": "one of: Shirts, Tank Tops, Pants, Shorts, Dresses, Shoes, Accessories, Jackets, Sweaters",
-  "brand": "brand name if visible, or 'Unknown' if not visible",
+  "brand": "brand name from image OR URL analysis",
   "colors": ["primary color", "secondary color if any"],
   "tags": ["style tags like Casual, Formal, Summer, etc."]
 }
+
+BRAND DETECTION PRIORITY:
+1. First, analyze the URL for brand clues: ${imageUrl}
+   - Extract brand from domain (nike.com → Nike, lululemon.com → Lululemon)
+   - Look for brand names in URL path (/nike/, /adidas/, /lululemon/)
+   - Check for brand abbreviations or codes in URL
+2. Then examine the image for visible brand logos, labels, or text
+3. If no brand found in either URL or image, use "Unknown"
+
+EXAMPLES:
+- URL "https://images.lululemon.com/..." → Brand: "Lululemon"
+- URL "https://static.nike.com/..." → Brand: "Nike"  
+- URL "https://www.adidas.com/images/..." → Brand: "Adidas"
+- URL "https://cdn.shopify.com/products/abc-brand/..." → Brand: "ABC Brand"
 
 Be specific but concise. For colors, use common color names like Black, White, Blue, Red, etc. For tags, include style, season, and occasion tags that would be relevant.`
                 },
