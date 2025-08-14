@@ -33,6 +33,12 @@ interface ClothingItem {
   updated_at?: string;
 }
 
+// Temporary interface for recommendation scoring
+interface ScoredClothingItem extends ClothingItem {
+  matchScore?: number;
+  attributeMatches?: string[];
+}
+
 interface AIAssistantProps {
   isOpen: boolean;
   onClose: () => void;
@@ -225,160 +231,215 @@ What can I help you with? 😊`,
     }
   };
 
-  // Helper function to extract recommended items from AI response with metadata consideration
+  // Helper function to extract recommended items from AI response with precise attribute matching
   const extractRecommendedItems = (aiContent: string, clothes: ClothingItem[]) => {
-    const recommendedItems: ClothingItem[] = [];
+    const recommendedItems: ScoredClothingItem[] = [];
     const contentLower = aiContent.toLowerCase();
     
     console.log('🔍 Extracting recommendations from AI content:', aiContent);
-    console.log('👗 Available clothes:', clothes.map(item => `${item.name} by ${item.brand} (${item.color}, ${item.size || 'no size'}, ${item.category})`));
+    console.log('👗 Available clothes:', clothes.map(item => `${item.name} by ${item.brand} (${item.color}, ${item.size || 'No size'})`));
 
-    // Enhanced matching: Look for specific patterns that indicate recommended items + metadata
+    // Enhanced precision matching: Look for items with specific attributes mentioned
     clothes.forEach(item => {
       const itemName = item.name.toLowerCase().trim();
       const itemBrand = item.brand.toLowerCase().trim();
-      const itemColor = item.color.toLowerCase().trim();
-      const itemCategory = item.category.toLowerCase().trim();
-      const itemSize = item.size?.toLowerCase().trim();
+      const itemColor = item.color ? item.color.toLowerCase().trim() : '';
+      const itemSize = item.size ? item.size.toLowerCase().trim() : '';
+      const itemCategory = item.category ? item.category.toLowerCase().trim() : '';
       
-      // Score-based matching system with metadata consideration
+      // Score-based matching system with attribute validation
       let matchScore = 0;
-      const matchDetails: string[] = [];
+      const attributeMatches: string[] = [];
       
-      // Higher score for exact name matches
-      if (contentLower.includes(itemName)) {
-        matchScore += 10;
-        matchDetails.push(`name match: +10`);
+      // 1. EXACT ITEM NAME + BRAND MATCH (highest priority)
+      const fullItemName = `${itemName} by ${itemBrand}`;
+      const brandFirst = `${itemBrand} ${itemName}`;
+      if (contentLower.includes(fullItemName) || contentLower.includes(brandFirst)) {
+        matchScore += 20;
+        attributeMatches.push('full-name-brand');
+        console.log(`🎯 EXACT match "${item.name} by ${item.brand}": +20 points`);
       }
       
-      // Higher score for brand + name combination
-      const brandAndName = `${itemName} by ${itemBrand}`;
-      const brandAndNameAlt = `${itemBrand} ${itemName}`;
-      if (contentLower.includes(brandAndName) || contentLower.includes(brandAndNameAlt)) {
-        matchScore += 15;
-        matchDetails.push(`brand+name match: +15`);
-      }
-      
-      // Enhanced color matching with metadata awareness
+      // 2. ITEM NAME MATCH (if found, check for attribute specificity)
       const nameIndex = contentLower.indexOf(itemName);
-      if (itemColor && itemColor !== '#gray') {
-        const colorName = itemColor.replace('#', '');
+      if (nameIndex !== -1) {
+        matchScore += 15;
+        attributeMatches.push('name');
+        console.log(`📝 Name match "${item.name}": +15 points`);
         
-        // Check for color mentions anywhere in the AI response
-        if (contentLower.includes(colorName)) {
-          matchScore += 7;
-          matchDetails.push(`color match (${colorName}): +7`);
-        }
+        // Get context around the item name mention (±100 characters)
+        const contextStart = Math.max(0, nameIndex - 100);
+        const contextEnd = Math.min(contentLower.length, nameIndex + itemName.length + 100);
+        const itemContext = contentLower.substring(contextStart, contextEnd);
         
-        // Extra points if color is mentioned near the item name
-        if (nameIndex !== -1) {
-          const nearbyText = contentLower.substring(Math.max(0, nameIndex - 50), nameIndex + itemName.length + 50);
-          if (nearbyText.includes(colorName)) {
-            matchScore += 3; // Bonus for proximity
-            matchDetails.push(`color proximity: +3`);
+        console.log(`🔍 Item context for "${item.name}": "${itemContext}"`);
+        
+        // 3. COLOR VALIDATION (critical for matching)
+        if (itemColor && itemColor !== '#gray' && itemColor !== 'gray') {
+          // Handle both hex colors and color names
+          const colorName = itemColor.startsWith('#') ? itemColor.slice(1) : itemColor;
+          const colorVariants = [colorName, itemColor];
+          
+          // Add common color variations
+          if (colorName === 'black') colorVariants.push('dark');
+          if (colorName === 'white') colorVariants.push('light', 'cream');
+          if (colorName === 'blue') colorVariants.push('navy', 'denim');
+          if (colorName === 'gray' || colorName === 'grey') colorVariants.push('gray', 'grey');
+          
+          const hasColorMatch = colorVariants.some(color => itemContext.includes(color));
+          
+          if (hasColorMatch) {
+            matchScore += 10;
+            attributeMatches.push('color');
+            console.log(`🎨 Color match for "${item.name}" (${itemColor}): +10 points`);
+          } else {
+            // Color mismatch penalty - if AI mentions a color but it doesn't match
+            const mentionsOtherColor = /\b(black|white|blue|red|green|gray|grey|navy|brown|pink|purple|yellow|orange)\b/.test(itemContext);
+            if (mentionsOtherColor) {
+              matchScore -= 15;
+              console.log(`❌ Color MISMATCH for "${item.name}" - AI mentions different color: -15 points`);
+            }
           }
         }
-      }
-      
-      // NEW: Size matching with metadata awareness
-      if (itemSize && (contentLower.includes(itemSize) || contentLower.includes(`size ${itemSize}`))) {
-        matchScore += 8;
-        matchDetails.push(`size match (${itemSize}): +8`);
-      }
-      
-      // NEW: Category matching with metadata awareness
-      if (contentLower.includes(itemCategory)) {
-        matchScore += 6;
-        matchDetails.push(`category match (${itemCategory}): +6`);
-      }
-      
-      // NEW: Price consideration (if AI mentions price ranges)
-      if (item.price_min) {
-        const priceRange = item.price_min === item.price_max ? `$${item.price_min}` : `$${item.price_min}-$${item.price_max}`;
-        if (contentLower.includes('budget') || contentLower.includes('affordable') || contentLower.includes('expensive') || contentLower.includes('price')) {
-          if (item.price_min <= 50 && (contentLower.includes('budget') || contentLower.includes('affordable'))) {
-            matchScore += 4;
-            matchDetails.push(`budget price match: +4`);
-          } else if (item.price_min > 100 && (contentLower.includes('expensive') || contentLower.includes('investment'))) {
-            matchScore += 4;
-            matchDetails.push(`premium price match: +4`);
+        
+        // 4. SIZE VALIDATION (if AI mentions size)
+        if (itemSize) {
+          const sizeVariants = [itemSize];
+          // Add size variations
+          if (itemSize.includes('x')) {
+            sizeVariants.push(itemSize.replace('x', ' x '), itemSize.replace('x', ' x'));
+          }
+          
+          const hasSizeMatch = sizeVariants.some(size => itemContext.includes(size));
+          
+          if (hasSizeMatch) {
+            matchScore += 8;
+            attributeMatches.push('size');
+            console.log(`📏 Size match for "${item.name}" (${itemSize}): +8 points`);
+          } else {
+            // Check if AI mentions any size for this item type
+            const mentionsSize = /\b(xs|small|medium|large|xl|xxl|\d+x\d+|size \w+)\b/.test(itemContext);
+            if (mentionsSize) {
+              matchScore -= 10;
+              console.log(`❌ Size MISMATCH for "${item.name}" - AI mentions different size: -10 points`);
+            }
           }
         }
-      }
-      
-      // NEW: Tags matching with metadata awareness  
-      if (item.tags && item.tags.length > 0) {
-        item.tags.forEach(tag => {
-          const tagLower = tag.toLowerCase();
-          if (contentLower.includes(tagLower)) {
+        
+        // 5. CATEGORY/TYPE VALIDATION
+        if (itemCategory) {
+          const categoryVariants = [itemCategory];
+          // Add category variations
+          if (itemCategory === 'tops') categoryVariants.push('shirt', 'tank', 'tee');
+          if (itemCategory === 'pants') categoryVariants.push('jeans', 'trousers');
+          if (itemCategory === 'shoes') categoryVariants.push('sneakers', 'boots');
+          
+          const hasCategoryMatch = categoryVariants.some(cat => itemContext.includes(cat));
+          
+          if (hasCategoryMatch) {
             matchScore += 5;
-            matchDetails.push(`tag match (${tag}): +5`);
+            attributeMatches.push('category');
+            console.log(`📂 Category match for "${item.name}" (${itemCategory}): +5 points`);
           }
-        });
+        }
+        
+        // 6. BRAND VALIDATION (if mentioned separately)
+        if (itemBrand && itemContext.includes(itemBrand)) {
+          matchScore += 8;
+          attributeMatches.push('brand');
+          console.log(`🏷️ Brand match for "${item.name}" (${itemBrand}): +8 points`);
+        }
       }
       
-      // Score for specific product details (e.g., "7 inch", "linerless", "tank", etc.)
-      const productKeywords = itemName.split(' ');
+      // 7. KEYWORD MATCHES (lower priority, for partial matches)
+      const productKeywords = itemName.split(' ').filter(word => word.length > 3);
       productKeywords.forEach(keyword => {
-        if (keyword.length > 3 && contentLower.includes(keyword)) {
-          matchScore += 3;
-          matchDetails.push(`keyword match (${keyword}): +3`);
+        if (contentLower.includes(keyword)) {
+          matchScore += 2;
+          console.log(`🔍 Keyword match "${keyword}" for "${item.name}": +2 points`);
         }
       });
       
-      console.log(`📊 Score for "${item.name} by ${item.brand}": ${matchScore} (${matchDetails.join(', ')})`);
+      console.log(`📊 Final score for "${item.name} by ${item.brand}": ${matchScore} (matches: ${attributeMatches.join(', ')})`);
       
-      // Only include items with a significant match score
-      if (matchScore >= 8) {
-        recommendedItems.push(item);
-        console.log(`✅ Added "${item.name} by ${item.brand}" to recommendations (score: ${matchScore})`);
+      // Higher threshold for precision - only include items with strong matches
+      if (matchScore >= 15) {
+        recommendedItems.push({ ...item, matchScore, attributeMatches });
+        console.log(`✅ ADDED "${item.name} by ${item.brand}" to recommendations (score: ${matchScore})`);
+      } else if (matchScore > 0) {
+        console.log(`⚠️ EXCLUDED "${item.name} by ${item.brand}" - score too low (${matchScore})`);
       }
     });
 
-    // Sort by relevance (could be enhanced with more sophisticated scoring)
+    // Sort by match score (highest first) and then by attribute specificity
     recommendedItems.sort((a, b) => {
-      // Prioritize exact matches in the response
-      const aExactMatch = contentLower.includes(a.name.toLowerCase()) ? 1 : 0;
-      const bExactMatch = contentLower.includes(b.name.toLowerCase()) ? 1 : 0;
-      return bExactMatch - aExactMatch;
+      const aScore = a.matchScore || 0;
+      const bScore = b.matchScore || 0;
+      if (bScore !== aScore) {
+        return bScore - aScore;
+      }
+      // If scores are equal, prioritize items with more specific attribute matches
+      const aSpecificity = a.attributeMatches?.length || 0;
+      const bSpecificity = b.attributeMatches?.length || 0;
+      return bSpecificity - aSpecificity;
     });
 
-    // If no specific items found with high scores, fall back to category-based recommendations
-    if (recommendedItems.length === 0 && currentWeather) {
-      console.log('⚠️ No high-score matches found, falling back to weather-based recommendations');
-      const temp = currentWeather.temperature;
-      if (temp <= 50) {
-        // Cold weather - look for warm items
-        const warmItems = clothes.filter(item => 
-          item.category.includes('jacket') || 
-          item.category.includes('sweater') || 
-          item.name.toLowerCase().includes('coat') ||
-          item.name.toLowerCase().includes('warm')
-        );
-        recommendedItems.push(...warmItems.slice(0, 3));
-      } else if (temp >= 75) {
-        // Hot weather - look for light items
-        const lightItems = clothes.filter(item => 
-          item.category.includes('t-shirt') || 
-          item.category.includes('shorts') || 
-          item.name.toLowerCase().includes('light') ||
-          item.name.toLowerCase().includes('summer')
-        );
-        recommendedItems.push(...lightItems.slice(0, 3));
-      } else {
-        // Moderate weather - look for athletic/casual items mentioned in response
-        const athleticItems = clothes.filter(item =>
-          item.category.includes('shorts') ||
-          item.category.includes('tank') ||
-          item.category.includes('shoes') ||
-          item.name.toLowerCase().includes('athletic')
-        );
-        recommendedItems.push(...athleticItems.slice(0, 3));
+    // If no specific items found with high scores, provide context-aware fallback
+    if (recommendedItems.length === 0) {
+      console.log('⚠️ No precise matches found. Checking for category-based recommendations...');
+      
+      // Look for category mentions in AI content
+      const categoryMatches = [];
+      if (contentLower.includes('shirt') || contentLower.includes('top') || contentLower.includes('tank')) {
+        categoryMatches.push(...clothes.filter(item => item.category.includes('tops')));
+      }
+      if (contentLower.includes('pants') || contentLower.includes('jeans') || contentLower.includes('shorts')) {
+        categoryMatches.push(...clothes.filter(item => item.category.includes('pants') || item.category.includes('shorts')));
+      }
+      if (contentLower.includes('shoes') || contentLower.includes('sneakers')) {
+        categoryMatches.push(...clothes.filter(item => item.category.includes('shoes')));
+      }
+      
+      if (categoryMatches.length > 0) {
+        recommendedItems.push(...categoryMatches.slice(0, 3));
+        console.log('📂 Added category-based recommendations');
+      } else if (currentWeather) {
+        // Weather-based fallback only if no category matches
+        console.log('🌤️ Using weather-based fallback recommendations');
+        const temp = currentWeather.temperature;
+        if (temp <= 50) {
+          const warmItems = clothes.filter(item => 
+            item.category.includes('jacket') || item.category.includes('sweater') || 
+            item.name.toLowerCase().includes('coat') || item.name.toLowerCase().includes('warm')
+          );
+          recommendedItems.push(...warmItems.slice(0, 3));
+        } else if (temp >= 75) {
+          const lightItems = clothes.filter(item => 
+            item.category.includes('t-shirt') || item.category.includes('shorts') || 
+            item.name.toLowerCase().includes('light') || item.name.toLowerCase().includes('summer')
+          );
+          recommendedItems.push(...lightItems.slice(0, 3));
+        } else {
+          const athleticItems = clothes.filter(item =>
+            item.category.includes('shorts') || item.category.includes('tank') || 
+            item.category.includes('shoes') || item.name.toLowerCase().includes('athletic')
+          );
+          recommendedItems.push(...athleticItems.slice(0, 3));
+        }
       }
     }
 
-    const finalRecommendations = recommendedItems.slice(0, 4); // Limit to 4 items for display
-    console.log('🎯 Final recommendations:', finalRecommendations.map(item => `${item.name} by ${item.brand}`));
+    // Clean up the objects before returning (remove our temporary scoring properties)
+    const finalRecommendations = recommendedItems.slice(0, 4).map(item => {
+      const cleanItem = { ...item };
+      delete cleanItem.matchScore;
+      delete cleanItem.attributeMatches;
+      return cleanItem;
+    });
+    
+    console.log('🎯 FINAL PRECISE RECOMMENDATIONS:', finalRecommendations.map(item => 
+      `${item.name} by ${item.brand} (${item.color}, ${item.size || 'No size'})`
+    ));
     
     return finalRecommendations;
   };
