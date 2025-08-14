@@ -24,7 +24,13 @@ interface ClothingItem {
   color: string;
   tags: string[];
   category: string;
+  size_type?: string;
+  size?: string;
+  price_min?: number;
+  price_max?: number;
   image_url?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AIAssistantProps {
@@ -219,27 +225,30 @@ What can I help you with? 😊`,
     }
   };
 
-  // Helper function to extract recommended items from AI response
+  // Helper function to extract recommended items from AI response with metadata consideration
   const extractRecommendedItems = (aiContent: string, clothes: ClothingItem[]) => {
     const recommendedItems: ClothingItem[] = [];
     const contentLower = aiContent.toLowerCase();
     
     console.log('🔍 Extracting recommendations from AI content:', aiContent);
-    console.log('👗 Available clothes:', clothes.map(item => `${item.name} by ${item.brand}`));
+    console.log('👗 Available clothes:', clothes.map(item => `${item.name} by ${item.brand} (${item.color}, ${item.size || 'no size'}, ${item.category})`));
 
-    // Enhanced matching: Look for specific patterns that indicate recommended items
+    // Enhanced matching: Look for specific patterns that indicate recommended items + metadata
     clothes.forEach(item => {
       const itemName = item.name.toLowerCase().trim();
       const itemBrand = item.brand.toLowerCase().trim();
       const itemColor = item.color.toLowerCase().trim();
+      const itemCategory = item.category.toLowerCase().trim();
+      const itemSize = item.size?.toLowerCase().trim();
       
-      // Score-based matching system
+      // Score-based matching system with metadata consideration
       let matchScore = 0;
+      const matchDetails: string[] = [];
       
       // Higher score for exact name matches
       if (contentLower.includes(itemName)) {
         matchScore += 10;
-        console.log(`📝 Name match found for "${item.name}": +10 points`);
+        matchDetails.push(`name match: +10`);
       }
       
       // Higher score for brand + name combination
@@ -247,18 +256,65 @@ What can I help you with? 😊`,
       const brandAndNameAlt = `${itemBrand} ${itemName}`;
       if (contentLower.includes(brandAndName) || contentLower.includes(brandAndNameAlt)) {
         matchScore += 15;
-        console.log(`🏷️ Brand+Name match found for "${item.name} by ${item.brand}": +15 points`);
+        matchDetails.push(`brand+name match: +15`);
       }
       
-      // Score for color mentions near the item
+      // Enhanced color matching with metadata awareness
       const nameIndex = contentLower.indexOf(itemName);
-      if (nameIndex !== -1 && itemColor && itemColor !== '#gray') {
+      if (itemColor && itemColor !== '#gray') {
         const colorName = itemColor.replace('#', '');
-        const nearbyText = contentLower.substring(Math.max(0, nameIndex - 50), nameIndex + itemName.length + 50);
-        if (nearbyText.includes(colorName) || nearbyText.includes('black') || nearbyText.includes('white')) {
-          matchScore += 5;
-          console.log(`🎨 Color context match for "${item.name}": +5 points`);
+        
+        // Check for color mentions anywhere in the AI response
+        if (contentLower.includes(colorName)) {
+          matchScore += 7;
+          matchDetails.push(`color match (${colorName}): +7`);
         }
+        
+        // Extra points if color is mentioned near the item name
+        if (nameIndex !== -1) {
+          const nearbyText = contentLower.substring(Math.max(0, nameIndex - 50), nameIndex + itemName.length + 50);
+          if (nearbyText.includes(colorName)) {
+            matchScore += 3; // Bonus for proximity
+            matchDetails.push(`color proximity: +3`);
+          }
+        }
+      }
+      
+      // NEW: Size matching with metadata awareness
+      if (itemSize && (contentLower.includes(itemSize) || contentLower.includes(`size ${itemSize}`))) {
+        matchScore += 8;
+        matchDetails.push(`size match (${itemSize}): +8`);
+      }
+      
+      // NEW: Category matching with metadata awareness
+      if (contentLower.includes(itemCategory)) {
+        matchScore += 6;
+        matchDetails.push(`category match (${itemCategory}): +6`);
+      }
+      
+      // NEW: Price consideration (if AI mentions price ranges)
+      if (item.price_min) {
+        const priceRange = item.price_min === item.price_max ? `$${item.price_min}` : `$${item.price_min}-$${item.price_max}`;
+        if (contentLower.includes('budget') || contentLower.includes('affordable') || contentLower.includes('expensive') || contentLower.includes('price')) {
+          if (item.price_min <= 50 && (contentLower.includes('budget') || contentLower.includes('affordable'))) {
+            matchScore += 4;
+            matchDetails.push(`budget price match: +4`);
+          } else if (item.price_min > 100 && (contentLower.includes('expensive') || contentLower.includes('investment'))) {
+            matchScore += 4;
+            matchDetails.push(`premium price match: +4`);
+          }
+        }
+      }
+      
+      // NEW: Tags matching with metadata awareness  
+      if (item.tags && item.tags.length > 0) {
+        item.tags.forEach(tag => {
+          const tagLower = tag.toLowerCase();
+          if (contentLower.includes(tagLower)) {
+            matchScore += 5;
+            matchDetails.push(`tag match (${tag}): +5`);
+          }
+        });
       }
       
       // Score for specific product details (e.g., "7 inch", "linerless", "tank", etc.)
@@ -266,11 +322,11 @@ What can I help you with? 😊`,
       productKeywords.forEach(keyword => {
         if (keyword.length > 3 && contentLower.includes(keyword)) {
           matchScore += 3;
-          console.log(`🔍 Keyword match "${keyword}" for "${item.name}": +3 points`);
+          matchDetails.push(`keyword match (${keyword}): +3`);
         }
       });
       
-      console.log(`📊 Final score for "${item.name} by ${item.brand}": ${matchScore}`);
+      console.log(`📊 Score for "${item.name} by ${item.brand}": ${matchScore} (${matchDetails.join(', ')})`);
       
       // Only include items with a significant match score
       if (matchScore >= 8) {
