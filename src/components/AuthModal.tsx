@@ -69,6 +69,31 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     resetForm();
   };
 
+  const handleDummyLogin = async () => {
+    setLoading(true);
+    setError('');
+    
+    // Set dummy user credentials
+    setEmail('user@example.com');
+    setPassword('123456789');
+    
+    try {
+      const { error } = await signIn('user@example.com', '123456789');
+      if (error) {
+        setError(typeof error === 'string' ? error : (error as any)?.message || 'Dummy user login failed');
+        return;
+      }
+      
+      // Success - close modal
+      onClose();
+      resetForm();
+    } catch (err: unknown) {
+      setError((err as Error).message || 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -203,6 +228,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 isLogin ? 'Sign In' : 'Create Account'
               )}
             </button>
+
+            {/* Dummy User Button (only show on login) */}
+            {isLogin && (
+              <button
+                type="button"
+                onClick={handleDummyLogin}
+                disabled={loading}
+                className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-gray-300"
+              >
+                🎭 Log in as dummy user
+              </button>
+            )}
 
             {/* Switch Mode */}
             <div className="text-center pt-4 border-t border-gray-100">
