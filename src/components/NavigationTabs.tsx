@@ -3,9 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Tag, Package, PieChart, LucideIcon } from 'lucide-react';
+import { Tag, LucideIcon } from 'lucide-react';
 
-type TabType = 'clothes' | 'outfits' | 'analytics';
+type TabType = 'clothes';
 
 interface TabConfig {
   id: TabType;
@@ -18,10 +18,7 @@ const NavigationTabs = (): React.ReactElement => {
   const pathname = usePathname();
 
   const tabs: TabConfig[] = [
-    { id: 'clothes', label: 'Clothes', icon: Tag, href: '/clothes' },
-    // Temporarily hiding these tabs
-    // { id: 'outfits', label: 'Outfits', icon: Package, href: '/outfits' },
-    // { id: 'analytics', label: 'Analytics', icon: PieChart, href: '/analytics' }
+    { id: 'clothes', label: 'Clothes', icon: Tag, href: '/clothes' }
   ];
 
   const getTabClasses = (tabHref: string) => {
