@@ -11,7 +11,7 @@ const Header = () => {
   const [showAddClothesForm, setShowAddClothesForm] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
-  const { user, loading, showTimeoutWarning, extendSession, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
 
   return (
     <>
@@ -102,36 +102,6 @@ const Header = () => {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
       />
-
-      {/* Session Timeout Warning Modal */}
-      {showTimeoutWarning && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-            <div className="text-center">
-              <div className="text-4xl mb-4">⏰</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Session Expiring Soon</h3>
-              <p className="text-gray-600 mb-6">
-                You'll be automatically logged out in 5 minutes due to inactivity. 
-                Would you like to stay logged in?
-              </p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={extendSession}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                >
-                  Stay Logged In
-                </button>
-                <button
-                  onClick={signOut}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-                >
-                  Log Out Now
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };

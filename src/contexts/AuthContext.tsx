@@ -13,8 +13,6 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  showTimeoutWarning: boolean;
-  extendSession: () => void;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error?: unknown }>;
   signIn: (email: string, password: string) => Promise<{ error?: unknown }>;
   signOut: () => Promise<void>;
@@ -33,7 +31,6 @@ export const useAuth = () => {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
   
   // Use server-side authentication
   const { 
@@ -43,13 +40,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     serverSignOut,
     loading: serverLoading 
   } = useServerAuth();
-
-  // Session timeout handling (keeping this for compatibility)
-  const WARNING_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
-  const extendSession = () => {
-    console.log('🔄 Session extended by user interaction');
-    setShowTimeoutWarning(false);
-  };
 
   // Load initial session (runs once on mount)
   useEffect(() => {
@@ -94,22 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Intentionally empty - only run once on mount, getServerSession is stable
-
-  // Session timeout warning (separate effect for user-dependent logic)
-  useEffect(() => {
-    if (!user) return;
-
-    console.log('⚠️ Setting up session timeout warning for user:', user.email);
-    const warningTimer = setTimeout(() => {
-      setShowTimeoutWarning(true);
-      console.log('⚠️ Session timeout warning shown');
-    }, WARNING_TIME);
-
-    return () => {
-      clearTimeout(warningTimer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Only user.id needed, WARNING_TIME is constant
 
   // Server-side sign up
   const signUp = async (email: string, password: string, fullName: string) => {
@@ -176,21 +150,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔐 Starting server-side signout...');
       await serverSignOut();
       setUser(null);
-      setShowTimeoutWarning(false);
       console.log('✅ Server signout successful');
     } catch (error) {
       console.error('❌ Server signout error:', error);
       // Still clear local state even if server signout fails
       setUser(null);
-      setShowTimeoutWarning(false);
     }
   };
 
   const value = {
     user,
     loading: loading || serverLoading,
-    showTimeoutWarning,
-    extendSession,
     signUp,
     signIn,
     signOut,
