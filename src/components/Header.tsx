@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { Plus, Zap, LogOut, User } from 'lucide-react';
-import NavigationTabs from './NavigationTabs';
 import AddClothesForm from './AddClothesForm';
 import AuthModal from './AuthModal';
 import AIAssistant from './AIAssistant';
@@ -75,7 +74,6 @@ const Header = () => {
           </div>
         </div>
       </header>
-      <NavigationTabs />
       
       {/* Add Clothes Form Sidebar */}
       {user && (

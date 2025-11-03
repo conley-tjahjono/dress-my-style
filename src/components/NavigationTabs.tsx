@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Tag, Package, PieChart, LucideIcon } from 'lucide-react';
-import Clothes from './tabs/Clothes';
-import Outfits from './tabs/Outfits';
-import Analytics from './tabs/Analytics';
 
 type TabType = 'clothes' | 'outfits' | 'analytics';
 
@@ -12,57 +11,50 @@ interface TabConfig {
   id: TabType;
   label: string;
   icon: LucideIcon;
-  component: React.ReactElement;
+  href: string;
 }
 
 const NavigationTabs = (): React.ReactElement => {
-  const [activeTab, setActiveTab] = useState<TabType>('clothes');
+  const pathname = usePathname();
 
   const tabs: TabConfig[] = [
-    { id: 'clothes', label: 'Clothes', icon: Tag, component: <Clothes /> },
+    { id: 'clothes', label: 'Clothes', icon: Tag, href: '/clothes' },
     // Temporarily hiding these tabs
-    // { id: 'outfits', label: 'Outfits', icon: Package, component: <Outfits /> },
-    // { id: 'analytics', label: 'Analytics', icon: PieChart, component: <Analytics /> }
+    // { id: 'outfits', label: 'Outfits', icon: Package, href: '/outfits' },
+    // { id: 'analytics', label: 'Analytics', icon: PieChart, href: '/analytics' }
   ];
 
-  const getActiveTab = () => tabs.find(tab => tab.id === activeTab)?.component || <Clothes />;
-
-  const getTabClasses = (tabId: TabType) => {
-    const baseClasses = "h-10 w-28 rounded-lg flex items-center gap-1.5 px-3";
-    const activeClasses = tabId === activeTab ? "bg-white" : "bg-transparent";
+  const getTabClasses = (tabHref: string) => {
+    const baseClasses = "h-10 w-28 rounded-lg flex items-center gap-1.5 px-3 transition-colors";
+    const activeClasses = pathname === tabHref ? "bg-white" : "bg-transparent hover:bg-gray-50";
     return `${baseClasses} ${activeClasses}`;
   };
 
-  const getTextIconClasses = (tabId: TabType) => 
-    tabId === activeTab ? "text-gray-800" : "text-gray-500";
+  const getTextIconClasses = (tabHref: string) => 
+    pathname === tabHref ? "text-gray-800" : "text-gray-500";
 
   return (
     <div className="w-full">
       {/* Navigation Tabs Container */}
       <div className="w-full h-16 bg-gray-100 rounded-lg mb-8">
         <div className="flex items-center h-full px-4">
-          {tabs.map(({ id, label, icon: Icon }) => (
-          <button 
+          {tabs.map(({ id, label, icon: Icon, href }) => (
+            <Link 
               key={id}
-              onClick={() => setActiveTab(id)}
-              className={getTabClasses(id)}
-          >
+              href={href}
+              className={getTabClasses(href)}
+            >
               <Icon 
                 size={24} 
                 strokeWidth={2.5} 
-                className={getTextIconClasses(id)}
+                className={getTextIconClasses(href)}
               />
-              <span className={`text-sm font-medium ${getTextIconClasses(id)}`}>
+              <span className={`text-sm font-medium ${getTextIconClasses(href)}`}>
                 {label}
               </span>
-          </button>
+            </Link>
           ))}
         </div>
-      </div>
-
-      {/* Tab Content */}
-      <div className="w-full">
-        {getActiveTab()}
       </div>
     </div>
   );

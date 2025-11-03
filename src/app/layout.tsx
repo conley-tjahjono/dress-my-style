@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
+import Header from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "Dress My Style - AI-Powered Closet Management",
@@ -18,7 +19,10 @@ export default function RootLayout({
         className="font-sans bg-[theme(colors.bg-default)] text-[theme(colors.primary)]"
       >
         <AuthProvider>
-          {children}
+          <div className="max-w-xl md:max-w-6xl mx-auto">
+            <Header />
+            {children}
+          </div>
         </AuthProvider>
       </body>
     </html>
