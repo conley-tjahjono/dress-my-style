@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 // @ts-expect-error - Supabase client type issue in demo mode
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -68,110 +68,106 @@ export default function ClothesPage(): React.ReactElement {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Load clothing data from Supabase
+  // Fetch clothing data from Supabase
+  const fetchClothingItems = useCallback(async () => {
+    try {
+      console.log('🔄 Starting clothes fetch - Auth loading:', authLoading, 'User:', user?.email || 'null');
+      
+      // Don't fetch if auth is still loading
+      if (authLoading) {
+        console.log('⏳ Auth still loading, waiting...');
+        return;
+      }
+      
+      if (!user) {
+        console.log('🔐 User not authenticated, skipping data load');
+        setClothingItems([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('👤 User authenticated, fetching clothing data for:', user.email);
+
+      // Test connection first
+      const connectionTest = await testSupabaseConnection(user.id);
+      console.log('🔌 Connection test completed:', connectionTest);
+
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timed out')), 10000)
+      );
+
+      // @ts-expect-error - Supabase client type issue in demo mode
+      const queryPromise = supabase
+        .from('clothes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      console.log('📡 Executing Supabase query for user:', user.id);
+      const result = await Promise.race([queryPromise, timeoutPromise]);
+      console.log('📨 Query result received:', result);
+      
+      const { data, error } = result as { data: any[]; error: any };
+
+      if (error) {
+        console.error('❌ Error loading clothes:', error);
+        console.error('❌ Error details:', { code: error.code, message: error.message, hint: error.hint });
+        setIsLoading(false);
+        return;
+      }
+
+      // Transform Supabase data to match our interface
+      const transformedData: ClothingItem[] = data?.map((item: Record<string, unknown>) => ({
+        id: String(item.id),
+        name: String(item.name || 'Untitled'),
+        brand: String(item.brand || 'Unknown Brand'), 
+        image: String((item as any).image_url || '/api/placeholder/300/300'),
+        color: String(item.color || '#gray'),
+        tags: (item.tags as string[]) || [],
+        category: (item.category as string)?.toLowerCase() || 'other',
+        size_type: (item as any).size_type as any,
+        size: (item as any).size as any,
+        price_min: (item as any).price_min as any,
+        price_max: (item as any).price_max as any,
+        image_url: (item as any).image_url as any,
+        created_at: (item as any).created_at as any,
+        updated_at: (item as any).updated_at as any
+      })) || [];
+
+      setClothingItems(transformedData);
+      console.log('✅ Loaded', transformedData.length, 'clothing items');
+    } catch (error) {
+      console.error('💥 Unexpected error loading clothes:', error);
+      if (error instanceof Error) {
+        console.error('💥 Error message:', error.message);
+        console.error('💥 Error stack:', error.stack);
+      }
+    } finally {
+      setIsLoading(false);
+      console.log('🏁 Clothes loading complete');
+    }
+  }, [user, authLoading]);
+
+  // Load clothing data from Supabase on mount and when user/auth changes
   useEffect(() => {
     let isCancelled = false;
-
-    const fetchClothingItems = async () => {
-      try {
-        console.log('🔄 Starting clothes fetch - Auth loading:', authLoading, 'User:', user?.email || 'null', 'Cancelled:', isCancelled);
-
-        // Don't fetch if auth is still loading
-        if (authLoading) {
-          console.log('⏳ Auth still loading, waiting...');
-          return;
-        }
-
-        if (!user) {
-          console.log('🔐 User not authenticated, skipping data load');
-          if (!isCancelled) {
-            setClothingItems([]);
-            setIsLoading(false);
-          }
-          return;
-        }
-
-        console.log('👤 User authenticated, fetching clothing data for:', user.email);
-
-        // Test connection first
-        const connectionTest = await testSupabaseConnection(user.id);
-        console.log('🔌 Connection test completed:', connectionTest);
-
-        // Add timeout to prevent hanging
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database query timed out')), 10000)
-        );
-
-        // @ts-expect-error - Supabase client type issue in demo mode
-        const queryPromise = supabase
-          .from('clothes')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        console.log('📡 Executing Supabase query for user:', user.id);
-        const result = await Promise.race([queryPromise, timeoutPromise]);
-        console.log('📨 Query result received:', result);
-        
-        if (isCancelled) {
-          console.log('🚫 Request was cancelled, ignoring result');
-          return;
-        }
-        
-        const { data, error } = result as { data: any[]; error: any };
-
-        if (error) {
-          console.error('❌ Error loading clothes:', error);
-          console.error('❌ Error details:', { code: error.code, message: error.message, hint: error.hint });
-          if (!isCancelled) {
-            setIsLoading(false);
-          }
-          return;
-        }
-
-        // Transform Supabase data to match our interface
-        const transformedData: ClothingItem[] = data?.map((item: Record<string, unknown>) => ({
-          id: String(item.id),
-          name: String(item.name || 'Untitled'),
-          brand: String(item.brand || 'Unknown Brand'), 
-          image: String((item as any).image_url || '/api/placeholder/300/300'),
-          color: String(item.color || '#gray'),
-          tags: (item.tags as string[]) || [],
-          category: (item.category as string)?.toLowerCase() || 'other',
-          size_type: (item as any).size_type as any,
-          size: (item as any).size as any,
-          price_min: (item as any).price_min as any,
-          price_max: (item as any).price_max as any,
-          image_url: (item as any).image_url as any,
-          created_at: (item as any).created_at as any,
-          updated_at: (item as any).updated_at as any
-        })) || [];
-
-        if (!isCancelled) {
-          setClothingItems(transformedData);
-          console.log('✅ Loaded', transformedData.length, 'clothing items');
-        }
-      } catch (error) {
-        console.error('💥 Unexpected error loading clothes:', error);
-        if (error instanceof Error) {
-          console.error('💥 Error message:', error.message);
-          console.error('💥 Error stack:', error.stack);
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-          console.log('🏁 Clothes loading complete');
-        }
+    
+    const fetchData = async () => {
+      setIsLoading(true);
+      await fetchClothingItems();
+      if (isCancelled) {
+        console.log('🚫 Request was cancelled, ignoring result');
       }
     };
 
-    fetchClothingItems();
+    fetchData();
     
     return () => {
       isCancelled = true;
       console.log('🧹 Cleaning up clothes fetch');
     };
-  }, [user?.id, authLoading]);
+  }, [fetchClothingItems]);
 
   // Emergency timeout to prevent infinite loading
   useEffect(() => {
@@ -399,8 +395,10 @@ export default function ClothesPage(): React.ReactElement {
     setClothingItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
     handleCloseEditForm();
   };
-  const handleAddSuccess = (newItem: ClothingItem) => {
-    setClothingItems(prev => [newItem, ...prev]);
+  const handleAddSuccess = async (_newItem?: ClothingItem) => {
+    console.log('🔄 Refetching clothes after add');
+    setIsLoading(true);
+    await fetchClothingItems();
     handleCloseEditForm();
   };
   const handleDeleteItem = async (item: ClothingItem) => {
@@ -427,6 +425,22 @@ export default function ClothesPage(): React.ReactElement {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Listen for clothes added from Header component
+  useEffect(() => {
+    const handleClothesAdded = async (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log('🔄 Received clothesAdded event, refetching clothes');
+      setIsLoading(true);
+      await fetchClothingItems();
+    };
+    
+    window.addEventListener('clothesAdded', handleClothesAdded);
+    
+    return () => {
+      window.removeEventListener('clothesAdded', handleClothesAdded);
+    };
+  }, [fetchClothingItems]);
 
   return (
     <div className="flex gap-8 w-full">
